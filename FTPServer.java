@@ -11,10 +11,12 @@ import java.net.*;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.util.Scanner;
 import java.util.logging.*;
 
 public class FTPServer {
     private static int listenPort = 2121;
+    private static boolean running = true; // Server running flag
     static final Logger LOGGER = Logger.getLogger("FTPServer");
 
     public static void main(String[] args) throws IOException {
@@ -26,11 +28,14 @@ public class FTPServer {
             printAndLog("Attempting to listen on default port (2121)");
         }
 
+        // Start the server shutdown listener (listens for "q" to quit)
+        new Thread(FTPServer::shutdownListener).start();
+
         try (ServerSocket serverSocket = new ServerSocket(listenPort)) {
             printAndLog("Listening on port: " + listenPort);
 
             // Main loop to accept client connections
-            while (true) {
+            while (running) {
                 try {
                     Socket clientSocket = serverSocket.accept();
                     printAndLog("Accepted connection from: " + clientSocket.getInetAddress());
@@ -41,13 +46,28 @@ public class FTPServer {
                     printAndLog("Started thread for client: " + clientSocket.getInetAddress());
 
                 } catch (IOException e) {
-                    printAndLog("Error accepting connection: " + e.getMessage());
+                    if (running) { // Only log if still running
+                        printAndLog("Error accepting connection: " + e.getMessage());
+                    }
                 }
             }
 
         } catch (IOException e) {
             printAndLog("Could not listen on port " + listenPort + ": " + e.getMessage());
         }
+    }
+
+    // Shutdown listener that listens for "q" to quit the server
+    private static void shutdownListener() {
+        Scanner scanner = new Scanner(System.in);
+        while (running) {
+            if (scanner.nextLine().equalsIgnoreCase("q")) {
+                running = false;
+                printAndLog("Shutting down the server...");
+                break;
+            }
+        }
+        scanner.close();
     }
 
     private static class ClientHandler implements Runnable {
