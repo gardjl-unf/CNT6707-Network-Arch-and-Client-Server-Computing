@@ -1,3 +1,5 @@
 .vscode
 EchoServer.java
 *.class
+*.lock
+*.lock.lck

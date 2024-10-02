@@ -8,75 +8,41 @@
  */
 
 import java.net.*;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.channels.FileChannel; 
-import java.nio.channels.FileLock; 
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.util.Scanner;
-import java.io.PrintWriter;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.File;
-import java.util.logging.Logger;
-import java.util.logging.FileHandler;
-import java.util.logging.SimpleFormatter;
-import java.lang.SecurityException;
+import java.util.logging.*;
 
-
- public class FTPServer {
+public class FTPServer {
     final private int MAX_THREADS = 250;
-    static final Logger LOGGER = Logger.getLogger("FTPServer");
     private static int listenPort = 21;
-    
-    /**
-     * <p>Main method for the server program
-     * Takes an optional command line argument for the port number
-     * If no argument is provided, the default port number is 21
-     * If more than one argument is provided, or the argument is -h, the program will exit
-     * If the port number is not between 0 and 65535, the program will exit
-     * The program will listen on the specified port number for incoming connections
-     * When a connection is accepted, a new thread is created to handle the connection
-     * The program will continue to listen for connections until the user enters 'q'
-     * The program will exit when the user enters 'q'
-     * </p>
-     * @param args command line argument: port number
-     */
-    public static void main (String args[]) throws IOException {
-        LogToFile.logToFile(LOGGER, "FTPServer.log");
-        if (args.length == 0) {
-            LOGGER.info("Usage: java server <port number>, using default port FTP(21)");
-            System.out.println("Usage: java server <port number>, using default port FTP(21)");
+    static final Logger LOGGER = Logger.getLogger("FTPServer");
 
-        }
-        else if (args.length > 1 || args[0].equals("-h")) {
-            LOGGER.severe("Usage: java server <port number>");
-            System.err.println("Usage: java server <port number>");
-            System.exit(1);
-        }
-        else {
+    public static void main(String[] args) throws IOException {
+        LogToFile.logToFile(LOGGER, "FTPServer.log"); // Log to file
+        if (args.length > 0) {
             listenPort = Integer.parseInt(args[0]);
-            if (0 < listenPort && listenPort < 65535) {
-                LOGGER.info("Using port number: " + args[0]);
-                System.out.println("Using port number: " + args[0]);
-            }
-            else {
-                LOGGER.severe("Invalid port number: " + args[0]);
-                System.err.println("Invalid port number: " + args[0]);
-                System.exit(1);
-            }
-            LOGGER.info("Using port number: " + args[0]);
-            System.out.println("Using port number: " + args[0]);
+        }
+        else if (args.length == 0) {
+            printAndLog("Attempting to listen on port 21");
+        } 
+        else {
+            printAndLog("Usage: java FTPServer <port number>");
+            System.exit(1);
         }
 
         final Scanner userInput = new Scanner(System.in);
 
         while (userInput.next().charAt(0) != 'q') {
             try (ServerSocket serverSocket = new ServerSocket(listenPort)) {
+                printAndLog("Listening on port: " + listenPort);
                 Socket clientSocket = serverSocket.accept();
+                printAndLog("Accepted connection from: " + clientSocket.getInetAddress());
                 new Thread(new server(clientSocket)).start();
             } catch (IOException e) {
-                System.err.println("Could not listen on port " + listenPort);
-                userInput.close();
+                printAndLog("Could not listen on port " + listenPort);
+                LOGGER.severe(e.getMessage());
                 System.exit(-1);
             }
         }
@@ -87,102 +53,108 @@ import java.lang.SecurityException;
     private static class server implements Runnable {
         private final Socket clientSocket;
         private static final String ROOT_DIR = System.getProperty("user.dir");
-        private static final String FILE_SEP = System.getProperty("file.separator");
-        private static String currentDir = ROOT_DIR;
-        private static String inputLine = "";
-
 
         server(Socket clientSocket) {
             this.clientSocket = clientSocket;
         }
 
         public void run() {
-            while(!inputLine.equals("QUIT")) {
-                try {
-                    BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                    PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                    String inputLine;
-                    while ((inputLine = in.readLine().toUpperCase()) != null) {
-                        switch (inputLine) {
-                            case "LS":
-                                File dir = new File(ROOT_DIR);
-                                File[] files = dir.listFiles();
-                                for (File file : files) {
-                                    out.println(file.getName());
-                                }
-                                break;
-                            case "CD":
-                                out.println("Change directory");
-                                try {
-                                    currentDir = in.readLine();
-                                    File newDir = new File(currentDir);
-                                    if (newDir.exists() && newDir.isDirectory()) {
-                                        out.println("Directory changed to " + currentDir);
-                                    } else {
-                                        out.println("Directory does not exist");
-                                    }
-                                } catch (IOException e) {
-                                    out.println("Error changing directory");
-                                }
-                                break;
-                            default:
-                                break;
-                        }
+            try (
+                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)
+            ) {
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    String[] command = inputLine.split(" ");
+                    switch (command[0].toUpperCase()) {
+                        case "LS":
+                            File dir = new File(ROOT_DIR);
+                            File[] files = dir.listFiles();
+                            for (File file : files) {
+                                out.println(file.getName());
+                            }
+                            break;
+
+                        case "GET":
+                            if (command.length > 1) {
+                                sendFile(command[1], out);
+                            } else {
+                                out.println("ERROR: No file specified.");
+                            }
+                            break;
+
+                        case "PUT":
+                            if (command.length > 1) {
+                                receiveFile(command[1], in);
+                            } else {
+                                out.println("ERROR: No file specified.");
+                            }
+                            break;
+
+                        case "QUIT":
+                            out.println("Goodbye!");
+                            clientSocket.close();
+                            return;
+
+                        default:
+                            out.println("Unknown command");
+                            break;
                     }
-                } catch (IOException e) {
-                    System.out.println("Exception caught when trying to listen on port "
-                        + listenPort + " or listening for a connection");
-                    System.out.println(e.getMessage());
                 }
+            } catch (IOException e) {
+                printAndLog("Exception caught: " + e.getMessage());
+                LOGGER.severe(e.getMessage());
             }
         }
 
-        
-}
+        private void sendFile(String fileName, PrintWriter out) {
+            File file = new File(ROOT_DIR + File.separator + fileName);
+            if (file.exists() && !file.isDirectory()) {
+                try (FileOutputStream fileOutputStream = new FileOutputStream(file);
+                    FileChannel fileChannel = fileOutputStream.getChannel();
+                    FileLock fileLock = fileChannel.lock()) {
 
-    
-/** 
-     try (FileOutputStream fileOutputStream = new FileOutputStream(filePath); 
-             FileChannel fileChannel = fileOutputStream.getChannel(); 
-             FileLock fileLock = fileChannel.lock()) { 
-  
-            // Perform operations within the locked region 
-            System.out.println("File locked successfully!"); 
-  
-            // Simulating a process that holds the lock for some time 
-            Thread.sleep(500); 
-  
-        } catch (IOException | InterruptedException e) { 
-            e.printStackTrace(); 
-        } 
-  
-        // File lock released automatically when 
-        // the try-with-resources block is exited 
-        System.out.println("File lock released!"); 
-    } */
+                    BufferedReader fileReader = new BufferedReader(new FileReader(file));
+                    String line;
+                    while ((line = fileReader.readLine()) != null) {
+                        out.println(line);
+                    }
+                    out.println("EOF"); // End of file marker
+                    fileReader.close();
+                    printAndLog("File " + fileName + " sent to client.");
 
+                } catch (IOException e) {
+                    out.println("Error reading file");
+                    printAndLog("Error sending file: " + e.getMessage());
+                }
+            } else {
+                out.println("File not found");
+            }
+        }
 
-    /**
-     *     Logger logger = Logger.getLogger("MyLog");  
-    FileHandler fh;  
+        private void receiveFile(String fileName, BufferedReader in) {
+            File file = new File(ROOT_DIR + File.separator + fileName);
+            try (FileOutputStream fileOutputStream = new FileOutputStream(file);
+                FileChannel fileChannel = fileOutputStream.getChannel();
+                FileLock fileLock = fileChannel.lock()) {
 
-    try {  
+                PrintWriter fileWriter = new PrintWriter(new FileWriter(file));
+                String line;
+                while (!(line = in.readLine()).equals("EOF")) {
+                    fileWriter.println(line);
+                }
+                fileWriter.close();
+                printAndLog("File " + fileName + " received from client.");
 
-        // This block configure the logger with handler and formatter  
-        fh = new FileHandler("C:/temp/test/MyLogFile.log");  
-        logger.addHandler(fh);
-        SimpleFormatter formatter = new SimpleFormatter();  
-        fh.setFormatter(formatter);  
+            } catch (IOException e) {
+                printAndLog("Error receiving file: " + e.getMessage());
+            }
+        }
+    }
 
-        // the following statement is used to log any messages  
-        logger.info("My first log");  
-
-    } catch (SecurityException e) {  
-        e.printStackTrace();  
-    } catch (IOException e) {  
-        e.printStackTrace();  
-    }  
-     */
-
-    
-}
+    private static void printAndLog(String message) {
+        // Print to console and log it
+        System.out.println(message);
+        LOGGER.info(message);
+    }
+} 
