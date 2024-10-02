@@ -48,32 +48,35 @@ public class FTPClient {
 
             // After the LS, allow user input
             String userInput;
-            while (!(userInput = stdIn.readLine().toUpperCase()).equals("QUIT")) {
-                String[] command = userInput.split(" ");
-                switch (command[0]) {
+            while (!(userInput = stdIn.readLine()).equalsIgnoreCase("QUIT")) {
+                String[] command = userInput.split(" ", 2);
+                String cmd = command[0].toUpperCase(); // Only the command part (e.g., GET, PUT)
+                String argument = command.length > 1 ? command[1] : ""; // Filename stays unchanged
+
+                switch (cmd) {
                     case "GET":
-                        out.println(userInput);
+                        out.println(cmd + " " + argument);
                         long startTime = System.currentTimeMillis();
-                        receiveFile(command[1], ftpSocket);
+                        receiveFile(argument, ftpSocket);
                         long endTime = System.currentTimeMillis();
                         long responseTime = endTime - startTime;
-                        long fileSize = new File(command[1]).length();
+                        long fileSize = new File(argument).length();
                         printAndLog("GET Response Time: " + responseTime + " ms");
                         printAndLog("GET Throughput: " + (fileSize / (responseTime / 1000.0)) + " bytes/second");
                         break;
 
                     case "PUT":
-                        out.println(userInput);
+                        out.println(cmd + " " + argument);
                         startTime = System.currentTimeMillis();
-                        sendFile(command[1], ftpSocket);
+                        sendFile(argument, ftpSocket);
                         endTime = System.currentTimeMillis();
                         responseTime = endTime - startTime;
-                        fileSize = new File(command[1]).length();
+                        fileSize = new File(argument).length();
                         printAndLog("PUT Response Time: " + responseTime + " ms");
                         break;
 
                     case "CD":
-                        out.println(userInput);
+                        out.println(cmd + " " + argument);
                         printAndLog("Server Response: " + in.readLine());
 
                         // Run LS after CD to list directory contents
@@ -84,14 +87,14 @@ public class FTPClient {
                         break;
 
                     case "LS":
-                        out.println(userInput);  // Send LS command to the server
+                        out.println(cmd);  // Send LS command to the server
                         while (!(responseLine = in.readLine()).equals("EOF")) {
                             printAndLog("Server Response: " + responseLine);  // Print server response
                         }
                         break;
 
                     default:
-                        out.println(userInput);
+                        out.println(userInput); // Send raw user input to the server
                         printAndLog("Server Response: " + in.readLine());
                         break;
                 }
