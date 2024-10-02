@@ -1,5 +1,6 @@
 .vscode
 EchoServer.java
 *.class
+*.log
 *.lock
 *.lock.lck

@@ -23,11 +23,10 @@ public class FTPServer {
         LogToFile.logToFile(LOGGER, "FTPServer.log"); // Log to file
         if (args.length > 0) {
             listenPort = Integer.parseInt(args[0]);
-        }
-        else if (args.length == 0) {
+        } else if (args.length == 0) {
             printAndLog("Attempting to listen on port 21");
-        } 
-        else {
+            listenPort = 21;
+        } else {
             printAndLog("Usage: java FTPServer <port number>");
             System.exit(1);
         }
@@ -53,9 +52,11 @@ public class FTPServer {
     private static class server implements Runnable {
         private final Socket clientSocket;
         private static final String ROOT_DIR = System.getProperty("user.dir");
+        private String currentDir;
 
         server(Socket clientSocket) {
             this.clientSocket = clientSocket;
+            this.currentDir = ROOT_DIR; // Start in the root directory
         }
 
         public void run() {
@@ -65,13 +66,30 @@ public class FTPServer {
             ) {
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
+                    printAndLog("Received command: " + inputLine); // Log received command
                     String[] command = inputLine.split(" ");
                     switch (command[0].toUpperCase()) {
                         case "LS":
-                            File dir = new File(ROOT_DIR);
+                            File dir = new File(currentDir);
                             File[] files = dir.listFiles();
                             for (File file : files) {
                                 out.println(file.getName());
+                            }
+                            out.println("EOF"); // Mark the end of listing
+                            break;
+
+                        case "CD":
+                            if (command.length > 1) {
+                                File newDir = new File(currentDir + File.separator + command[1]);
+                                if (newDir.isDirectory() && newDir.getCanonicalPath().startsWith(ROOT_DIR)) {
+                                    currentDir = newDir.getCanonicalPath(); // Update current directory
+                                    out.println("Changed directory to: " + currentDir);
+                                    printAndLog("Changed directory to: " + currentDir);
+                                } else {
+                                    out.println("Directory not found or permission denied.");
+                                }
+                            } else {
+                                out.println("ERROR: No directory specified.");
                             }
                             break;
 
@@ -108,19 +126,14 @@ public class FTPServer {
         }
 
         private void sendFile(String fileName, PrintWriter out) {
-            File file = new File(ROOT_DIR + File.separator + fileName);
+            File file = new File(currentDir + File.separator + fileName);
             if (file.exists() && !file.isDirectory()) {
-                try (FileOutputStream fileOutputStream = new FileOutputStream(file);
-                    FileChannel fileChannel = fileOutputStream.getChannel();
-                    FileLock fileLock = fileChannel.lock()) {
-
-                    BufferedReader fileReader = new BufferedReader(new FileReader(file));
+                try (BufferedReader fileReader = new BufferedReader(new FileReader(file))) {
                     String line;
                     while ((line = fileReader.readLine()) != null) {
                         out.println(line);
                     }
                     out.println("EOF"); // End of file marker
-                    fileReader.close();
                     printAndLog("File " + fileName + " sent to client.");
 
                 } catch (IOException e) {
@@ -133,17 +146,12 @@ public class FTPServer {
         }
 
         private void receiveFile(String fileName, BufferedReader in) {
-            File file = new File(ROOT_DIR + File.separator + fileName);
-            try (FileOutputStream fileOutputStream = new FileOutputStream(file);
-                FileChannel fileChannel = fileOutputStream.getChannel();
-                FileLock fileLock = fileChannel.lock()) {
-
-                PrintWriter fileWriter = new PrintWriter(new FileWriter(file));
+            File file = new File(currentDir + File.separator + fileName);
+            try (PrintWriter fileWriter = new PrintWriter(new FileWriter(file))) {
                 String line;
                 while (!(line = in.readLine()).equals("EOF")) {
                     fileWriter.println(line);
                 }
-                fileWriter.close();
                 printAndLog("File " + fileName + " received from client.");
 
             } catch (IOException e) {
@@ -157,4 +165,4 @@ public class FTPServer {
         System.out.println(message);
         LOGGER.info(message);
     }
-} 
+}
