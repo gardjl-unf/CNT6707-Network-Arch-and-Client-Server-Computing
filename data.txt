@@ -1,14 +1,14 @@
 get file1MB.dat
 File file1MB.dat downloaded.
-GET of file1MB.dat completed in 47 ms
+GET of file1MB.dat completed in 61 ms
 File size: 1048576 bytes
-Throughput: 21787.23404255319 KB/s
+Throughput: 16786.885245901638 KB/s
 
 get file25MB.dat
 File file25MB.dat downloaded.
-GET of file25MB.dat completed in 428 ms
+GET of file25MB.dat completed in 454 ms
 File size: 26214400 bytes
-Throughput: 59813.08411214953 KB/s
+Throughput: 56387.66519823788 KB/s
 
 get file50MB.dat
 File file50MB.dat downloaded.
