@@ -7,7 +7,7 @@
  *              Commands: GET, PUT, CD, LS, QUIT
  */
 
- import java.net.*;
+import java.net.*;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -162,7 +162,7 @@ public class FTPServer {
             if (command.length > 1) {
                 File file = new File(currentDir + File.separator + command[1]);
                 try (
-                    FileOutputStream fos = new FileOutputStream(file);
+                    FileOutputStream fos = new FileOutputStream(file, false); // Overwrite mode
                     FileChannel fileChannel = fos.getChannel();
                     FileLock lock = fileChannel.lock() // Exclusive lock for writing
                 ) {
@@ -186,4 +186,4 @@ public class FTPServer {
         System.out.println(message);
         LOGGER.info(message);
     }
-}
+} 
