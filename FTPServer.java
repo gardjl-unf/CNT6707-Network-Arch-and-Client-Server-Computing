@@ -14,9 +14,14 @@ import java.nio.channels.FileLock;
 import java.util.Scanner;
 import java.util.logging.*;
 
+/**
+ * FTPServer handles client connections and commands like LS, CD, GET, and PUT.
+* It creates a new socket for file transfers (GET/PUT) to avoid blocking the main connection.
+*/
 public class FTPServer {
-    private static int listenPort = 2121;
-    private static boolean running = true; // Server running flag
+    private static ServerSocket serverSocket; // Global ServerSocket for main communication
+    private static int listenPort = 2121;     // Default port for client connections
+    private static boolean running = true;    // Server running flag
     static final Logger LOGGER = Logger.getLogger("FTPServer");
 
     public static void main(String[] args) throws IOException {
@@ -31,19 +36,21 @@ public class FTPServer {
         // Start the server shutdown listener (listens for "q" to quit)
         new Thread(FTPServer::shutdownListener).start();
 
-        try (ServerSocket serverSocket = new ServerSocket(listenPort)) {
+        try {
+            serverSocket = new ServerSocket(listenPort);
             printAndLog("Listening on port: " + listenPort);
 
             // Main loop to accept client connections
             while (running) {
                 try {
                     Socket clientSocket = serverSocket.accept();
-                    printAndLog("Accepted connection from: " + clientSocket.getInetAddress());
+                    String clientIp = clientSocket.getInetAddress().toString();
+                    printAndLog("Accepted connection from IP_ADDR: " + clientIp);
 
                     // Handle client connection in a new thread
                     Thread clientThread = new Thread(new ClientHandler(clientSocket));
                     clientThread.start();
-                    printAndLog("Started thread for client: " + clientSocket.getInetAddress());
+                    printAndLog("Started thread for client IP_ADDR: " + clientIp);
 
                 } catch (IOException e) {
                     if (running) { // Only log if still running
@@ -54,43 +61,62 @@ public class FTPServer {
 
         } catch (IOException e) {
             printAndLog("Could not listen on port " + listenPort + ": " + e.getMessage());
+        } finally {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+                printAndLog("Server socket closed.");
+            }
         }
     }
 
-    // Shutdown listener that listens for "q" to quit the server
+    /**
+     * Listens for "q" input to shut down the server.
+    */
     private static void shutdownListener() {
         Scanner scanner = new Scanner(System.in);
         while (running) {
             if (scanner.nextLine().equalsIgnoreCase("q")) {
-                running = false;
                 printAndLog("Shutting down the server...");
+                running = false;
+                try {
+                    if (serverSocket != null && !serverSocket.isClosed()) {
+                        serverSocket.close(); // Close the server socket to stop accept()
+                    }
+                } catch (IOException e) {
+                    printAndLog("Error closing the server socket: " + e.getMessage());
+                }
                 break;
             }
         }
         scanner.close();
     }
 
+    /**
+     * Handles individual client requests on a separate thread.
+    */
     private static class ClientHandler implements Runnable {
         private final Socket clientSocket;
+        private final String clientIp;
         private static final String ROOT_DIR = System.getProperty("user.dir");
         private String currentDir;
 
         ClientHandler(Socket clientSocket) {
             this.clientSocket = clientSocket;
+            this.clientIp = clientSocket.getInetAddress().toString();
             this.currentDir = ROOT_DIR; // Start in the root directory
-            printAndLog("ClientHandler initialized for: " + clientSocket.getInetAddress());
+            printAndLog("ClientHandler initialized for IP_ADDR: " + clientIp);
         }
 
         @Override
         public void run() {
-            printAndLog("Handling client connection...");
+            printAndLog("Handling client connection from IP_ADDR: " + clientIp);
             try (
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)
             ) {
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
-                    printAndLog("Received command: " + inputLine); // Log received command
+                    printAndLog("Received command from IP_ADDR: " + clientIp + ": " + inputLine);
                     String[] command = inputLine.split(" ");
                     switch (command[0].toUpperCase()) {
                         case "LS":
@@ -100,24 +126,29 @@ public class FTPServer {
                             handleCD(command, out);
                             break;
                         case "GET":
-                            handleGET(command, clientSocket);
+                            handleGET(command, out);
                             break;
                         case "PUT":
-                            handlePUT(command, clientSocket);
+                            handlePUT(command, out);
                             break;
                         case "QUIT":
                             handleQUIT(out);
                             return;  // Close this client handler after QUIT
                         default:
                             out.println("Unknown command");
+                            out.flush();
+                            printAndLog("Unknown command received from IP_ADDR: " + clientIp);
                             break;
                     }
                 }
             } catch (IOException e) {
-                printAndLog("Exception in client handling: " + e.getMessage());
+                printAndLog("Exception in client handling for IP_ADDR: " + clientIp + ": " + e.getMessage());
             }
         }
 
+        /**
+         * Handles the LS command to list files in the current directory.
+        */
         private void handleLS(PrintWriter out) {
             File dir = new File(currentDir);
             File[] files = dir.listFiles();
@@ -126,24 +157,27 @@ public class FTPServer {
                     out.println(file.getName());
                 }
             }
-            out.println("EOF"); // Mark the end of listing
+            out.println("EOF");
             out.flush();
-            printAndLog("LS command executed.");
+            printAndLog("LS command executed for IP_ADDR: " + clientIp);
         }
 
+        /**
+         * Handles the CD command to change the current directory.
+        */
         private void handleCD(String[] command, PrintWriter out) {
             if (command.length > 1) {
                 File newDir = new File(currentDir + File.separator + command[1]);
                 try {
                     if (newDir.isDirectory() && newDir.getCanonicalPath().startsWith(ROOT_DIR)) {
-                        currentDir = newDir.getCanonicalPath(); // Update current directory
+                        currentDir = newDir.getCanonicalPath();
                         out.println("Changed directory to: " + currentDir);
-                        printAndLog("Changed directory to: " + currentDir);
+                        printAndLog("Changed directory to: " + currentDir + " for IP_ADDR: " + clientIp);
                     } else {
                         out.println("Directory not found or permission denied.");
                     }
                 } catch (IOException e) {
-                    printAndLog("Error changing directory: " + e.getMessage());
+                    printAndLog("Error changing directory for IP_ADDR: " + clientIp + ": " + e.getMessage());
                 }
             } else {
                 out.println("ERROR: No directory specified.");
@@ -151,76 +185,99 @@ public class FTPServer {
             out.flush();
         }
 
-        private void handleGET(String[] command, Socket clientSocket) {
+        /**
+         * Handles the GET command for file downloads.
+        */
+        private void handleGET(String[] command, PrintWriter out) {
             if (command.length > 1) {
                 File file = new File(currentDir + File.separator + command[1]);
                 if (file.exists() && !file.isDirectory()) {
-                    try (
-                        FileInputStream fis = new FileInputStream(file);
-                        BufferedOutputStream bos = new BufferedOutputStream(clientSocket.getOutputStream());
-                        FileChannel fileChannel = fis.getChannel();
-                        FileLock lock = fileChannel.lock(0, Long.MAX_VALUE, true) // Shared lock for reading
-                    ) {
-                        byte[] buffer = new byte[4096];
-                        int bytesRead;
-                        while ((bytesRead = fis.read(buffer)) != -1) {
-                            bos.write(buffer, 0, bytesRead);  // Write file data
+                    try (ServerSocket transferSocket = new ServerSocket(0)) {
+                        int transferPort = transferSocket.getLocalPort();
+                        out.println("TRANSFER " + transferPort); // Tell client the transfer port
+                        out.flush();
+
+                        Socket transferClient = transferSocket.accept();
+                        printAndLog("GET: Transfer connection accepted for IP_ADDR: " + clientIp);
+
+                        try (FileInputStream fis = new FileInputStream(file);
+                            BufferedOutputStream bos = new BufferedOutputStream(transferClient.getOutputStream());
+                            FileChannel fileChannel = fis.getChannel();
+                            FileLock lock = fileChannel.lock(0, Long.MAX_VALUE, true)) {
+
+                            byte[] buffer = new byte[4096];
+                            int bytesRead;
+                            while ((bytesRead = fis.read(buffer)) != -1) {
+                                bos.write(buffer, 0, bytesRead);
+                            }
+                            bos.flush();
+                            printAndLog("File " + command[1] + " sent to IP_ADDR: " + clientIp);
                         }
-                        bos.flush();  // Ensure everything is sent to the client
-                        bos.write("EOF".getBytes()); // Send EOF marker explicitly after sending file
-                        bos.flush();
-                        printAndLog("File " + command[1] + " sent to client.");
                     } catch (IOException e) {
-                        printAndLog("Error sending file: " + e.getMessage());
+                        printAndLog("Error in GET file transfer for IP_ADDR: " + clientIp + ": " + e.getMessage());
                     }
                 } else {
-                    printAndLog("File not found: " + command[1]);
+                    out.println("ERROR: File not found");
+                    out.flush();
+                    printAndLog("File not found: " + command[1] + " for IP_ADDR: " + clientIp);
                 }
             } else {
-                printAndLog("ERROR: No file specified for GET command.");
+                out.println("ERROR: No file specified for GET command.");
+                out.flush();
             }
         }
 
-        private void handlePUT(String[] command, Socket clientSocket) {
+        /**
+         * Handles the PUT command for file uploads.
+        */
+        private void handlePUT(String[] command, PrintWriter out) {
             if (command.length > 1) {
                 File file = new File(currentDir + File.separator + command[1]);
-                try (
-                    BufferedInputStream bis = new BufferedInputStream(clientSocket.getInputStream());
-                    FileOutputStream fos = new FileOutputStream(file, false); // Overwrite mode
-                    FileChannel fileChannel = fos.getChannel();
-                    FileLock lock = fileChannel.lock() // Exclusive lock for writing
-                ) {
-                    byte[] buffer = new byte[4096];
-                    int bytesRead;
-                    while ((bytesRead = bis.read(buffer)) != -1) {
-                        String chunk = new String(buffer, 0, bytesRead);
-                        if (chunk.contains("EOF")) {
-                            int eofIndex = chunk.indexOf("EOF");
-                            fos.write(buffer, 0, eofIndex);  // Write everything up to EOF
-                            break;
+                try (ServerSocket transferSocket = new ServerSocket(0)) {
+                    int transferPort = transferSocket.getLocalPort();
+                    out.println("TRANSFER " + transferPort); // Tell client the transfer port
+                    out.flush();
+
+                    Socket transferClient = transferSocket.accept();
+                    printAndLog("PUT: Transfer connection accepted for IP_ADDR: " + clientIp);
+
+                    try (BufferedInputStream bis = new BufferedInputStream(transferClient.getInputStream());
+                        FileOutputStream fos = new FileOutputStream(file, false);
+                        FileChannel fileChannel = fos.getChannel();
+                        FileLock lock = fileChannel.lock()) {
+
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = bis.read(buffer)) != -1) {
+                            fos.write(buffer, 0, bytesRead);
                         }
-                        fos.write(buffer, 0, bytesRead);  // Write file data
+                        fos.flush();
+                        printAndLog("File " + command[1] + " received from IP_ADDR: " + clientIp);
                     }
-                    fos.flush();
-                    printAndLog("File " + command[1] + " received from client.");
                 } catch (IOException e) {
-                    printAndLog("Error receiving file: " + e.getMessage());
+                    printAndLog("Error in PUT file transfer for IP_ADDR: " + clientIp + ": " + e.getMessage());
                 }
             } else {
-                printAndLog("ERROR: No file specified.");
+                out.println("ERROR: No file specified for PUT command.");
+                out.flush();
             }
         }
 
+        /**
+         * Handles the QUIT command to close the client connection.
+        */
         private void handleQUIT(PrintWriter out) throws IOException {
             out.println("Goodbye!"); // Inform the client the server is closing the connection
-            printAndLog("Client issued QUIT. Closing connection.");
-
-            // Close the client socket
-            clientSocket.close();
-            printAndLog("Client connection closed.");
+            out.flush();
+            printAndLog("Client issued QUIT. Closing connection for IP_ADDR: " + clientIp);
+            clientSocket.close(); // Close the client socket
+            printAndLog("Client connection closed for IP_ADDR: " + clientIp);
         }
     }
 
+    /**
+     * Utility method to log messages both to the console and log file.
+    */
     private static void printAndLog(String message) {
         System.out.println(message);
         LOGGER.info(message);

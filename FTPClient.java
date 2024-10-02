@@ -11,6 +11,10 @@ import java.io.*;
 import java.net.*;
 import java.util.logging.*;
 
+/**
+ * FTPClient interacts with the FTPServer to execute commands like LS, CD, GET, and PUT.
+* It creates a new socket for file transfers (GET/PUT) to avoid blocking the main connection.
+*/
 public class FTPClient {
     static final Logger LOGGER = Logger.getLogger("FTPClient");
 
@@ -41,10 +45,7 @@ public class FTPClient {
 
             // Automatically send an LS command on login to list the initial directory contents
             out.println("LS");
-            String responseLine;
-            while (!(responseLine = in.readLine()).equals("EOF")) {
-                printAndLog("Server Response (LS): " + responseLine);
-            }
+            readServerResponse(in);
 
             // After the LS, allow user input
             String userInput;
@@ -56,23 +57,25 @@ public class FTPClient {
                 switch (cmd) {
                     case "GET":
                         out.println(cmd + " " + argument);
-                        long startTime = System.currentTimeMillis();
-                        receiveFile(argument, ftpSocket);
-                        long endTime = System.currentTimeMillis();
-                        long responseTime = endTime - startTime;
-                        long fileSize = new File(argument).length();
-                        printAndLog("GET Response Time: " + responseTime + " ms");
-                        printAndLog("GET Throughput: " + (fileSize / (responseTime / 1000.0)) + " bytes/second");
+                        String portResponse = readTransferPort(in);
+                        if (portResponse.equals("ERROR: File not found")) {
+                            printAndLog("File not found. Aborting transfer.");
+                        } else {
+                            int transferPort = Integer.parseInt(portResponse);
+                            long startTime = System.currentTimeMillis();
+                            transferGET(argument, hostName, transferPort);
+                            long endTime = System.currentTimeMillis();
+                            logTransferDetails("GET", argument, startTime, endTime);
+                        }
                         break;
 
                     case "PUT":
                         out.println(cmd + " " + argument);
-                        startTime = System.currentTimeMillis();
-                        sendFile(argument, ftpSocket);
-                        endTime = System.currentTimeMillis();
-                        responseTime = endTime - startTime;
-                        fileSize = new File(argument).length();
-                        printAndLog("PUT Response Time: " + responseTime + " ms");
+                        int transferPort = Integer.parseInt(readTransferPort(in));
+                        long startTime = System.currentTimeMillis();
+                        transferPUT(argument, hostName, transferPort);
+                        long endTime = System.currentTimeMillis();
+                        logTransferDetails("PUT", argument, startTime, endTime);
                         break;
 
                     case "CD":
@@ -81,16 +84,12 @@ public class FTPClient {
 
                         // Run LS after CD to list directory contents
                         out.println("LS");
-                        while (!(responseLine = in.readLine()).equals("EOF")) {
-                            printAndLog("Server Response: " + responseLine);
-                        }
+                        readServerResponse(in);
                         break;
 
                     case "LS":
                         out.println(cmd);  // Send LS command to the server
-                        while (!(responseLine = in.readLine()).equals("EOF")) {
-                            printAndLog("Server Response: " + responseLine);  // Print server response
-                        }
+                        readServerResponse(in);
                         break;
 
                     default:
@@ -112,37 +111,78 @@ public class FTPClient {
         }
     }
 
-    private static void receiveFile(String fileName, Socket ftpSocket) throws IOException {
-        try (BufferedInputStream bis = new BufferedInputStream(ftpSocket.getInputStream());
-            FileOutputStream fos = new FileOutputStream(fileName, false)) {  // Overwrite mode
+    /**
+     * Reads the server's response for a command.
+    * @param in The input stream from the server.
+    * @throws IOException If an I/O error occurs.
+    */
+    private static void readServerResponse(BufferedReader in) throws IOException {
+        String responseLine;
+        while (!(responseLine = in.readLine()).equals("EOF")) {
+            printAndLog("Server Response: " + responseLine);
+        }
+    }
+
+    /**
+     * Reads the transfer port information from the server.
+    * @param in The input stream from the server.
+    * @return The transfer port number.
+    * @throws IOException If an I/O error occurs.
+    */
+    private static String readTransferPort(BufferedReader in) throws IOException {
+        String transferInfo = in.readLine();
+        if (transferInfo.startsWith("TRANSFER ")) {
+            return transferInfo.split(" ")[1]; // Return the port number
+        } else if (transferInfo.startsWith("ERROR")) {
+            return "ERROR: File not found";
+        }
+        throw new IOException("Transfer port information not received correctly.");
+    }
+
+    /**
+     * Handles the GET operation for downloading a file from the server.
+    * @param fileName The name of the file to download.
+    * @param hostName The host name of the server.
+    * @param port The port number for the transfer socket.
+    * @throws IOException If an I/O error occurs.
+    */
+    private static void transferGET(String fileName, String hostName, int port) throws IOException {
+        try (
+            Socket transferSocket = new Socket(hostName, port);
+            BufferedInputStream bis = new BufferedInputStream(transferSocket.getInputStream());
+            FileOutputStream fos = new FileOutputStream(fileName, false) // Overwrite mode
+        ) {
             byte[] buffer = new byte[4096];
             int bytesRead;
             while ((bytesRead = bis.read(buffer)) != -1) {
-                String chunk = new String(buffer, 0, bytesRead);
-                if (chunk.contains("EOF")) {
-                    int eofIndex = chunk.indexOf("EOF");
-                    fos.write(buffer, 0, eofIndex);  // Write everything up to EOF
-                    break;
-                }
-                fos.write(buffer, 0, bytesRead);  // Write file data
+                fos.write(buffer, 0, bytesRead); // Write file data
             }
             fos.flush();
             printAndLog("File " + fileName + " downloaded.");
         }
     }
 
-    private static void sendFile(String fileName, Socket ftpSocket) throws IOException {
+    /**
+     * Handles the PUT operation for uploading a file to the server.
+    * @param fileName The name of the file to upload.
+    * @param hostName The host name of the server.
+    * @param port The port number for the transfer socket.
+    * @throws IOException If an I/O error occurs.
+    */
+    private static void transferPUT(String fileName, String hostName, int port) throws IOException {
         File file = new File(fileName);
         if (file.exists() && !file.isDirectory()) {
-            try (BufferedOutputStream bos = new BufferedOutputStream(ftpSocket.getOutputStream());
-                FileInputStream fis = new FileInputStream(file)) {
+            try (
+                Socket transferSocket = new Socket(hostName, port);
+                BufferedOutputStream bos = new BufferedOutputStream(transferSocket.getOutputStream());
+                FileInputStream fis = new FileInputStream(file)
+            ) {
                 byte[] buffer = new byte[4096];
                 int bytesRead;
                 while ((bytesRead = fis.read(buffer)) != -1) {
                     bos.write(buffer, 0, bytesRead);  // Send file data
                 }
-                bos.write("EOF".getBytes());  // End of file marker
-                bos.flush();
+                bos.flush(); // Ensure everything is flushed
                 printAndLog("File " + fileName + " uploaded.");
             }
         } else {
@@ -150,9 +190,30 @@ public class FTPClient {
         }
     }
 
+    /**
+     * Logs the details of a file transfer (GET/PUT), including file size and throughput.
+    * @param operation The type of operation (GET/PUT).
+    * @param fileName The name of the file being transferred.
+    * @param startTime The start time of the transfer.
+    * @param endTime The end time of the transfer.
+    * @throws IOException If an I/O error occurs while logging file size.
+    */
+    private static void logTransferDetails(String operation, String fileName, long startTime, long endTime) throws IOException {
+        File file = new File(fileName);
+        long fileSize = file.length();
+        long duration = endTime - startTime;
+        double throughput = (fileSize / (duration / 1000.0)) / 1024.0; // Throughput in KB/s
+        printAndLog(operation + " of " + fileName + " completed in " + duration + " ms");
+        printAndLog("File size: " + fileSize + " bytes");
+        printAndLog("Throughput: " + throughput + " KB/s");
+    }
+
+    /**
+     * Utility method to print messages to the console and log them.
+    * @param message The message to log.
+    */
     private static void printAndLog(String message) {
-        // Print to console and log it
         System.out.println(message);
         LOGGER.info(message);
     }
-} 
+}  
