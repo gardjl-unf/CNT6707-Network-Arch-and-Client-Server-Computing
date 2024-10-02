@@ -1,22 +1,17 @@
 #!/bin/bash
 
 # Create files with specified sizes using fallocate
-echo "Generating files with non-random data..."
+echo "Generating files with random data..."
 
-# Generate a 1 MB file
-fallocate -l 1M file1MB.dat
-echo "Generated file1MB.dat (1 MB)"
+# 1MB file
+dd if=/dev/urandom of=file1MB.dat bs=1M count=1
 
-# Generate a 25 MB file
-fallocate -l 25M file25MB.dat
-echo "Generated file25MB.dat (25 MB)"
+# 25MB file
+dd if=/dev/urandom of=file25MB.dat bs=1M count=25
 
-# Generate a 50 MB file
-fallocate -l 50M file50MB.dat
-echo "Generated file50MB.dat (50 MB)"
+# 50MB file
+dd if=/dev/urandom of=file50MB.dat bs=1M count=50
 
-# Generate a 100 MB file
-fallocate -l 100M file100MB.dat
-echo "Generated file100MB.dat (100 MB)"
+# 100MB file
+dd if=/dev/urandom of=file100MB.dat bs=1M count=100
 
-echo "File generation complete."

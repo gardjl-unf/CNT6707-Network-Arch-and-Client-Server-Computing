@@ -1,0 +1,47 @@
+get file1MB.dat
+File file1MB.dat downloaded.
+GET of file1MB.dat completed in 47 ms
+File size: 1048576 bytes
+Throughput: 21787.23404255319 KB/s
+
+get file25MB.dat
+File file25MB.dat downloaded.
+GET of file25MB.dat completed in 428 ms
+File size: 26214400 bytes
+Throughput: 59813.08411214953 KB/s
+
+get file50MB.dat
+File file50MB.dat downloaded.
+GET of file50MB.dat completed in 128 ms
+File size: 5285410 bytes
+Throughput: 40324.47814941406 KB/s
+
+get file100MB.dat
+File file100MB.dat downloaded.
+GET of file100MB.dat completed in 98 ms
+File size: 3306224 bytes
+Throughput: 32946.26913265306 KB/s
+
+put file1MB.dat
+File file1MB.dat uploaded.
+PUT of file1MB.dat completed in 23 ms
+File size: 1048576 bytes
+Throughput: 44521.739130434784 KB/s
+
+put file25MB.dat
+File file25MB.dat uploaded.
+PUT of file25MB.dat completed in 391 ms
+File size: 26214321 bytes
+Throughput: 65472.94846946931 KB/s
+
+put file50MB.dat
+File file50MB.dat uploaded.
+PUT of file50MB.dat completed in 56 ms
+File size: 5285410 bytes
+Throughput: 92170.23577008929 KB/s
+
+put file100MB.dat
+File file100MB.dat uploaded.
+PUT of file100MB.dat completed in 33 ms
+File size: 3306224 bytes
+Throughput: 97840.43560606061 KB/s
