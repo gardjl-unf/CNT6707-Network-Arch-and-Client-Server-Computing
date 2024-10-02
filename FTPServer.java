@@ -80,15 +80,14 @@ public class FTPServer {
                             handleCD(command, out);
                             break;
                         case "GET":
-                            handleGET(command, out);
+                            handleGET(command, clientSocket);
                             break;
                         case "PUT":
-                            handlePUT(command, in);
+                            handlePUT(command, clientSocket);
                             break;
                         case "QUIT":
-                            out.println("Goodbye!");
-                            clientSocket.close();
-                            return;
+                            handleQUIT(out);
+                            return;  // Close this client handler after QUIT
                         default:
                             out.println("Unknown command");
                             break;
@@ -108,6 +107,7 @@ public class FTPServer {
                 }
             }
             out.println("EOF"); // Mark the end of listing
+            out.flush();
             printAndLog("LS command executed.");
         }
 
@@ -128,50 +128,60 @@ public class FTPServer {
             } else {
                 out.println("ERROR: No directory specified.");
             }
+            out.flush();
         }
 
-        private void handleGET(String[] command, PrintWriter out) {
+        private void handleGET(String[] command, Socket clientSocket) {
             if (command.length > 1) {
                 File file = new File(currentDir + File.separator + command[1]);
                 if (file.exists() && !file.isDirectory()) {
                     try (
                         FileInputStream fis = new FileInputStream(file);
+                        BufferedOutputStream bos = new BufferedOutputStream(clientSocket.getOutputStream());
                         FileChannel fileChannel = fis.getChannel();
                         FileLock lock = fileChannel.lock(0, Long.MAX_VALUE, true) // Shared lock for reading
                     ) {
-                        BufferedReader fileReader = new BufferedReader(new InputStreamReader(fis));
-                        String line;
-                        while ((line = fileReader.readLine()) != null) {
-                            out.println(line);
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = fis.read(buffer)) != -1) {
+                            bos.write(buffer, 0, bytesRead);  // Write file data
                         }
-                        out.println("EOF"); // End of file marker
+                        bos.flush();  // Ensure everything is sent to the client
+                        bos.write("EOF".getBytes()); // Send EOF marker explicitly after sending file
+                        bos.flush();
                         printAndLog("File " + command[1] + " sent to client.");
                     } catch (IOException e) {
-                        out.println("Error reading file");
                         printAndLog("Error sending file: " + e.getMessage());
                     }
                 } else {
-                    out.println("File not found");
+                    printAndLog("File not found: " + command[1]);
                 }
             } else {
-                out.println("ERROR: No file specified.");
+                printAndLog("ERROR: No file specified for GET command.");
             }
         }
 
-        private void handlePUT(String[] command, BufferedReader in) {
+        private void handlePUT(String[] command, Socket clientSocket) {
             if (command.length > 1) {
                 File file = new File(currentDir + File.separator + command[1]);
                 try (
+                    BufferedInputStream bis = new BufferedInputStream(clientSocket.getInputStream());
                     FileOutputStream fos = new FileOutputStream(file, false); // Overwrite mode
                     FileChannel fileChannel = fos.getChannel();
                     FileLock lock = fileChannel.lock() // Exclusive lock for writing
                 ) {
-                    PrintWriter fileWriter = new PrintWriter(fos);
-                    String line;
-                    while (!(line = in.readLine()).equals("EOF")) {
-                        fileWriter.println(line);
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = bis.read(buffer)) != -1) {
+                        String chunk = new String(buffer, 0, bytesRead);
+                        if (chunk.contains("EOF")) {
+                            int eofIndex = chunk.indexOf("EOF");
+                            fos.write(buffer, 0, eofIndex);  // Write everything up to EOF
+                            break;
+                        }
+                        fos.write(buffer, 0, bytesRead);  // Write file data
                     }
-                    fileWriter.flush();
+                    fos.flush();
                     printAndLog("File " + command[1] + " received from client.");
                 } catch (IOException e) {
                     printAndLog("Error receiving file: " + e.getMessage());
@@ -179,6 +189,15 @@ public class FTPServer {
             } else {
                 printAndLog("ERROR: No file specified.");
             }
+        }
+
+        private void handleQUIT(PrintWriter out) throws IOException {
+            out.println("Goodbye!"); // Inform the client the server is closing the connection
+            printAndLog("Client issued QUIT. Closing connection.");
+
+            // Close the client socket
+            clientSocket.close();
+            printAndLog("Client connection closed.");
         }
     }
 

@@ -54,7 +54,7 @@ public class FTPClient {
                     case "GET":
                         out.println(userInput);
                         long startTime = System.currentTimeMillis();
-                        receiveFile(command[1], in);
+                        receiveFile(command[1], ftpSocket);
                         long endTime = System.currentTimeMillis();
                         long responseTime = endTime - startTime;
                         long fileSize = new File(command[1]).length();
@@ -65,7 +65,7 @@ public class FTPClient {
                     case "PUT":
                         out.println(userInput);
                         startTime = System.currentTimeMillis();
-                        sendFile(command[1], out);
+                        sendFile(command[1], ftpSocket);
                         endTime = System.currentTimeMillis();
                         responseTime = endTime - startTime;
                         fileSize = new File(command[1]).length();
@@ -109,27 +109,39 @@ public class FTPClient {
         }
     }
 
-    private static void receiveFile(String fileName, BufferedReader in) throws IOException {
-        try (PrintWriter fileWriter = new PrintWriter(new FileWriter(fileName, false))) { // Overwrite mode
-            String line;
-            while (!(line = in.readLine()).equals("EOF")) {
-                fileWriter.println(line);
+    private static void receiveFile(String fileName, Socket ftpSocket) throws IOException {
+        try (BufferedInputStream bis = new BufferedInputStream(ftpSocket.getInputStream());
+            FileOutputStream fos = new FileOutputStream(fileName, false)) {  // Overwrite mode
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = bis.read(buffer)) != -1) {
+                String chunk = new String(buffer, 0, bytesRead);
+                if (chunk.contains("EOF")) {
+                    int eofIndex = chunk.indexOf("EOF");
+                    fos.write(buffer, 0, eofIndex);  // Write everything up to EOF
+                    break;
+                }
+                fos.write(buffer, 0, bytesRead);  // Write file data
             }
+            fos.flush();
             printAndLog("File " + fileName + " downloaded.");
         }
     }
 
-    private static void sendFile(String fileName, PrintWriter out) throws IOException {
+    private static void sendFile(String fileName, Socket ftpSocket) throws IOException {
         File file = new File(fileName);
         if (file.exists() && !file.isDirectory()) {
-            try (BufferedReader fileReader = new BufferedReader(new FileReader(file))) {
-                String line;
-                while ((line = fileReader.readLine()) != null) {
-                    out.println(line);
+            try (BufferedOutputStream bos = new BufferedOutputStream(ftpSocket.getOutputStream());
+                FileInputStream fis = new FileInputStream(file)) {
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = fis.read(buffer)) != -1) {
+                    bos.write(buffer, 0, bytesRead);  // Send file data
                 }
-                out.println("EOF"); // End of file marker
+                bos.write("EOF".getBytes());  // End of file marker
+                bos.flush();
+                printAndLog("File " + fileName + " uploaded.");
             }
-            printAndLog("File " + fileName + " uploaded.");
         } else {
             printAndLog("File not found: " + fileName);
         }
