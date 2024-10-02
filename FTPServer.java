@@ -7,59 +7,63 @@
  *              Commands: GET, PUT, CD, LS, QUIT
  */
 
-import java.net.*;
+ import java.net.*;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.util.Scanner;
 import java.util.logging.*;
 
 public class FTPServer {
-    final private int MAX_THREADS = 250;
-    private static int listenPort = 21;
+    private static int listenPort = 2121;
     static final Logger LOGGER = Logger.getLogger("FTPServer");
 
     public static void main(String[] args) throws IOException {
         LogToFile.logToFile(LOGGER, "FTPServer.log"); // Log to file
+
         if (args.length > 0) {
             listenPort = Integer.parseInt(args[0]);
-        } else if (args.length == 0) {
-            printAndLog("Attempting to listen on port 21");
-            listenPort = 21;
         } else {
-            printAndLog("Usage: java FTPServer <port number>");
-            System.exit(1);
+            printAndLog("Attempting to listen on default port (2121)");
         }
 
-        final Scanner userInput = new Scanner(System.in);
+        try (ServerSocket serverSocket = new ServerSocket(listenPort)) {
+            printAndLog("Listening on port: " + listenPort);
 
-        while (userInput.next().charAt(0) != 'q') {
-            try (ServerSocket serverSocket = new ServerSocket(listenPort)) {
-                printAndLog("Listening on port: " + listenPort);
-                Socket clientSocket = serverSocket.accept();
-                printAndLog("Accepted connection from: " + clientSocket.getInetAddress());
-                new Thread(new server(clientSocket)).start();
-            } catch (IOException e) {
-                printAndLog("Could not listen on port " + listenPort);
-                LOGGER.severe(e.getMessage());
-                System.exit(-1);
+            // Main loop to accept client connections
+            while (true) {
+                try {
+                    Socket clientSocket = serverSocket.accept();
+                    printAndLog("Accepted connection from: " + clientSocket.getInetAddress());
+
+                    // Handle client connection in a new thread
+                    Thread clientThread = new Thread(new ClientHandler(clientSocket));
+                    clientThread.start();
+                    printAndLog("Started thread for client: " + clientSocket.getInetAddress());
+
+                } catch (IOException e) {
+                    printAndLog("Error accepting connection: " + e.getMessage());
+                }
             }
+
+        } catch (IOException e) {
+            printAndLog("Could not listen on port " + listenPort + ": " + e.getMessage());
         }
-        userInput.close();
-        System.exit(0);
     }
 
-    private static class server implements Runnable {
+    private static class ClientHandler implements Runnable {
         private final Socket clientSocket;
         private static final String ROOT_DIR = System.getProperty("user.dir");
         private String currentDir;
 
-        server(Socket clientSocket) {
+        ClientHandler(Socket clientSocket) {
             this.clientSocket = clientSocket;
             this.currentDir = ROOT_DIR; // Start in the root directory
+            printAndLog("ClientHandler initialized for: " + clientSocket.getInetAddress());
         }
 
+        @Override
         public void run() {
+            printAndLog("Handling client connection...");
             try (
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)
@@ -70,98 +74,115 @@ public class FTPServer {
                     String[] command = inputLine.split(" ");
                     switch (command[0].toUpperCase()) {
                         case "LS":
-                            File dir = new File(currentDir);
-                            File[] files = dir.listFiles();
-                            for (File file : files) {
-                                out.println(file.getName());
-                            }
-                            out.println("EOF"); // Mark the end of listing
+                            handleLS(out);
                             break;
-
                         case "CD":
-                            if (command.length > 1) {
-                                File newDir = new File(currentDir + File.separator + command[1]);
-                                if (newDir.isDirectory() && newDir.getCanonicalPath().startsWith(ROOT_DIR)) {
-                                    currentDir = newDir.getCanonicalPath(); // Update current directory
-                                    out.println("Changed directory to: " + currentDir);
-                                    printAndLog("Changed directory to: " + currentDir);
-                                } else {
-                                    out.println("Directory not found or permission denied.");
-                                }
-                            } else {
-                                out.println("ERROR: No directory specified.");
-                            }
+                            handleCD(command, out);
                             break;
-
                         case "GET":
-                            if (command.length > 1) {
-                                sendFile(command[1], out);
-                            } else {
-                                out.println("ERROR: No file specified.");
-                            }
+                            handleGET(command, out);
                             break;
-
                         case "PUT":
-                            if (command.length > 1) {
-                                receiveFile(command[1], in);
-                            } else {
-                                out.println("ERROR: No file specified.");
-                            }
+                            handlePUT(command, in);
                             break;
-
                         case "QUIT":
                             out.println("Goodbye!");
                             clientSocket.close();
                             return;
-
                         default:
                             out.println("Unknown command");
                             break;
                     }
                 }
             } catch (IOException e) {
-                printAndLog("Exception caught: " + e.getMessage());
-                LOGGER.severe(e.getMessage());
+                printAndLog("Exception in client handling: " + e.getMessage());
             }
         }
 
-        private void sendFile(String fileName, PrintWriter out) {
-            File file = new File(currentDir + File.separator + fileName);
-            if (file.exists() && !file.isDirectory()) {
-                try (BufferedReader fileReader = new BufferedReader(new FileReader(file))) {
-                    String line;
-                    while ((line = fileReader.readLine()) != null) {
-                        out.println(line);
-                    }
-                    out.println("EOF"); // End of file marker
-                    printAndLog("File " + fileName + " sent to client.");
+        private void handleLS(PrintWriter out) {
+            File dir = new File(currentDir);
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    out.println(file.getName());
+                }
+            }
+            out.println("EOF"); // Mark the end of listing
+            printAndLog("LS command executed.");
+        }
 
+        private void handleCD(String[] command, PrintWriter out) {
+            if (command.length > 1) {
+                File newDir = new File(currentDir + File.separator + command[1]);
+                try {
+                    if (newDir.isDirectory() && newDir.getCanonicalPath().startsWith(ROOT_DIR)) {
+                        currentDir = newDir.getCanonicalPath(); // Update current directory
+                        out.println("Changed directory to: " + currentDir);
+                        printAndLog("Changed directory to: " + currentDir);
+                    } else {
+                        out.println("Directory not found or permission denied.");
+                    }
                 } catch (IOException e) {
-                    out.println("Error reading file");
-                    printAndLog("Error sending file: " + e.getMessage());
+                    printAndLog("Error changing directory: " + e.getMessage());
                 }
             } else {
-                out.println("File not found");
+                out.println("ERROR: No directory specified.");
             }
         }
 
-        private void receiveFile(String fileName, BufferedReader in) {
-            File file = new File(currentDir + File.separator + fileName);
-            try (PrintWriter fileWriter = new PrintWriter(new FileWriter(file))) {
-                String line;
-                while (!(line = in.readLine()).equals("EOF")) {
-                    fileWriter.println(line);
+        private void handleGET(String[] command, PrintWriter out) {
+            if (command.length > 1) {
+                File file = new File(currentDir + File.separator + command[1]);
+                if (file.exists() && !file.isDirectory()) {
+                    try (
+                        FileInputStream fis = new FileInputStream(file);
+                        FileChannel fileChannel = fis.getChannel();
+                        FileLock lock = fileChannel.lock(0, Long.MAX_VALUE, true) // Shared lock for reading
+                    ) {
+                        BufferedReader fileReader = new BufferedReader(new InputStreamReader(fis));
+                        String line;
+                        while ((line = fileReader.readLine()) != null) {
+                            out.println(line);
+                        }
+                        out.println("EOF"); // End of file marker
+                        printAndLog("File " + command[1] + " sent to client.");
+                    } catch (IOException e) {
+                        out.println("Error reading file");
+                        printAndLog("Error sending file: " + e.getMessage());
+                    }
+                } else {
+                    out.println("File not found");
                 }
-                printAndLog("File " + fileName + " received from client.");
+            } else {
+                out.println("ERROR: No file specified.");
+            }
+        }
 
-            } catch (IOException e) {
-                printAndLog("Error receiving file: " + e.getMessage());
+        private void handlePUT(String[] command, BufferedReader in) {
+            if (command.length > 1) {
+                File file = new File(currentDir + File.separator + command[1]);
+                try (
+                    FileOutputStream fos = new FileOutputStream(file);
+                    FileChannel fileChannel = fos.getChannel();
+                    FileLock lock = fileChannel.lock() // Exclusive lock for writing
+                ) {
+                    PrintWriter fileWriter = new PrintWriter(fos);
+                    String line;
+                    while (!(line = in.readLine()).equals("EOF")) {
+                        fileWriter.println(line);
+                    }
+                    fileWriter.flush();
+                    printAndLog("File " + command[1] + " received from client.");
+                } catch (IOException e) {
+                    printAndLog("Error receiving file: " + e.getMessage());
+                }
+            } else {
+                printAndLog("ERROR: No file specified.");
             }
         }
     }
 
     private static void printAndLog(String message) {
-        // Print to console and log it
         System.out.println(message);
         LOGGER.info(message);
     }

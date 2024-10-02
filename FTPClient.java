@@ -15,19 +15,21 @@ public class FTPClient {
     static final Logger LOGGER = Logger.getLogger("FTPClient");
 
     public static void main(String[] args) throws IOException {
+        System.out.println("Starting FTP Client...");
         LogToFile.logToFile(LOGGER, "FTPClient.log"); // Log to file
+        printAndLog("Logging to FTPClient.log");
 
         if (args.length == 2) {
             printAndLog("Connecting to " + args[0] + " on port " + args[1]);
         } else if (args.length == 1) {
-            printAndLog("Attempting to connect to " + args[0] + " on port 21");
+            printAndLog("Attempting to connect to " + args[0] + " on default port (2121)");
         } else {
             printAndLog("Usage: java FTPClient <hostname> <port number>");
             System.exit(1);
         }
 
         String hostName = args[0];
-        final int portNumber = args.length == 2 ? Integer.parseInt(args[1]) : 21;
+        final int portNumber = args.length == 2 ? Integer.parseInt(args[1]) : 2121;
 
         try (
             Socket ftpSocket = new Socket(hostName, portNumber);
@@ -37,13 +39,14 @@ public class FTPClient {
         ) {
             printAndLog("Connection successful to " + hostName + ":" + portNumber);
 
-            // Run LS after login to list initial directory contents
+            // Automatically send an LS command on login to list the initial directory contents
             out.println("LS");
             String responseLine;
             while (!(responseLine = in.readLine()).equals("EOF")) {
-                printAndLog("Server Response: " + responseLine);
+                printAndLog("Server Response (LS): " + responseLine);
             }
 
+            // After the LS, allow user input
             String userInput;
             while (!(userInput = stdIn.readLine().toUpperCase()).equals("QUIT")) {
                 String[] command = userInput.split(" ");
