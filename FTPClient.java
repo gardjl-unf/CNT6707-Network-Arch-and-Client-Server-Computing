@@ -3,7 +3,7 @@
  * Project: Project 1/2
  * File: FTPClient.java
  * CNT6707 - Network Architecture and Client/Server Computing
- * Description: FTP server program that uses a blocking queue to handle multiple clients.
+ * Description: FTP server program
  *              Commands: GET, PUT, CD, LS, QUIT
  */
 
