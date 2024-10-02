@@ -4,3 +4,4 @@ EchoServer.java
 *.log
 *.lock
 *.lck
+*.dat
