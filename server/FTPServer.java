@@ -19,7 +19,7 @@ import java.util.logging.*;
 * It creates a new socket for file transfers (GET/PUT) to avoid blocking the main connection.
 */
 public class FTPServer {
-    private static ServerSocket serverSocket; // Global ServerSocket for main communication
+    private static ServerSocket serverSocket; // Global ServerSocket for the main communication
     private static int listenPort = 2121;     // Default port for client connections
     private static boolean running = true;    // Server running flag
     static final Logger LOGGER = Logger.getLogger("FTPServer");
@@ -100,6 +100,11 @@ public class FTPServer {
         private static final String ROOT_DIR = System.getProperty("user.dir");
         private String currentDir;
 
+        /**
+         * Initializes the client handler.
+        * 
+        * @param clientSocket The socket associated with the client.
+        */
         ClientHandler(Socket clientSocket) {
             this.clientSocket = clientSocket;
             this.clientIp = clientSocket.getInetAddress().toString();
@@ -133,7 +138,7 @@ public class FTPServer {
                             break;
                         case "QUIT":
                             handleQUIT(out);
-                            return;  // Close this client handler after QUIT
+                            return;
                         default:
                             out.println("Unknown command");
                             out.flush();
@@ -148,6 +153,8 @@ public class FTPServer {
 
         /**
          * Handles the LS command to list files in the current directory.
+        * 
+        * @param out The output stream to send the list of files to the client.
         */
         private void handleLS(PrintWriter out) {
             File dir = new File(currentDir);
@@ -164,6 +171,9 @@ public class FTPServer {
 
         /**
          * Handles the CD command to change the current directory.
+        * 
+        * @param command The CD command and its arguments (new directory).
+        * @param out     The output stream to send responses to the client.
         */
         private void handleCD(String[] command, PrintWriter out) {
             if (command.length > 1) {
@@ -186,32 +196,38 @@ public class FTPServer {
         }
 
         /**
-         * Handles the GET command for file downloads.
-        */
+         * Handles the GET command for downloading a file from the server.
+         * @param command The command array containing the GET command and file name.
+         * @param out The output stream to the client for sending messages.
+         */
         private void handleGET(String[] command, PrintWriter out) {
             if (command.length > 1) {
                 File file = new File(currentDir + File.separator + command[1]);
                 if (file.exists() && !file.isDirectory()) {
                     try (ServerSocket transferSocket = new ServerSocket(0)) {
+                        // Send transfer port to the client
                         int transferPort = transferSocket.getLocalPort();
-                        out.println("TRANSFER " + transferPort); // Tell client the transfer port
+                        out.println("TRANSFER " + transferPort);
                         out.flush();
+                        printAndLog("GET: Transfer port " + transferPort + " sent to IP_ADDR: " + clientIp);
 
+                        // Wait for the client to connect to the transfer port
                         Socket transferClient = transferSocket.accept();
-                        printAndLog("GET: Transfer connection accepted for IP_ADDR: " + clientIp);
+                        printAndLog("GET: Transfer connection accepted from client IP_ADDR: " + transferClient.getInetAddress());
 
+                        // Open file and transfer it to the client
                         try (FileInputStream fis = new FileInputStream(file);
                             BufferedOutputStream bos = new BufferedOutputStream(transferClient.getOutputStream());
                             FileChannel fileChannel = fis.getChannel();
-                            FileLock lock = fileChannel.lock(0, Long.MAX_VALUE, true)) {
+                            FileLock lock = fileChannel.lock(0, Long.MAX_VALUE, true)) { // Lock the file for reading
 
                             byte[] buffer = new byte[4096];
                             int bytesRead;
                             while ((bytesRead = fis.read(buffer)) != -1) {
-                                bos.write(buffer, 0, bytesRead);
+                                bos.write(buffer, 0, bytesRead); // Send file data to the client
                             }
-                            bos.flush();
-                            printAndLog("File " + command[1] + " sent to IP_ADDR: " + clientIp);
+                            bos.flush(); // Ensure all data is sent
+                            printAndLog("File " + command[1] + " successfully sent to IP_ADDR: " + clientIp);
                         }
                     } catch (IOException e) {
                         printAndLog("Error in GET file transfer for IP_ADDR: " + clientIp + ": " + e.getMessage());
@@ -228,31 +244,37 @@ public class FTPServer {
         }
 
         /**
-         * Handles the PUT command for file uploads.
-        */
+         * Handles the PUT command for uploading a file to the server.
+         * @param command The command array containing the PUT command and file name.
+         * @param out The output stream to the client for sending messages.
+         */
         private void handlePUT(String[] command, PrintWriter out) {
             if (command.length > 1) {
                 File file = new File(currentDir + File.separator + command[1]);
                 try (ServerSocket transferSocket = new ServerSocket(0)) {
+                    // Send transfer port to the client
                     int transferPort = transferSocket.getLocalPort();
-                    out.println("TRANSFER " + transferPort); // Tell client the transfer port
+                    out.println("TRANSFER " + transferPort);
                     out.flush();
+                    printAndLog("PUT: Transfer port " + transferPort + " sent to IP_ADDR: " + clientIp);
 
+                    // Wait for the client to connect to the transfer port
                     Socket transferClient = transferSocket.accept();
-                    printAndLog("PUT: Transfer connection accepted for IP_ADDR: " + clientIp);
+                    printAndLog("PUT: Transfer connection accepted from client IP_ADDR: " + transferClient.getInetAddress());
 
+                    // Receive file from the client
                     try (BufferedInputStream bis = new BufferedInputStream(transferClient.getInputStream());
-                        FileOutputStream fos = new FileOutputStream(file, false);
+                        FileOutputStream fos = new FileOutputStream(file, false); // Overwrite mode
                         FileChannel fileChannel = fos.getChannel();
-                        FileLock lock = fileChannel.lock()) {
+                        FileLock lock = fileChannel.lock()) { // Lock the file for writing
 
                         byte[] buffer = new byte[4096];
                         int bytesRead;
                         while ((bytesRead = bis.read(buffer)) != -1) {
-                            fos.write(buffer, 0, bytesRead);
+                            fos.write(buffer, 0, bytesRead); // Write received file data
                         }
-                        fos.flush();
-                        printAndLog("File " + command[1] + " received from IP_ADDR: " + clientIp);
+                        fos.flush(); // Ensure all data is written
+                        printAndLog("File " + command[1] + " successfully received from IP_ADDR: " + clientIp);
                     }
                 } catch (IOException e) {
                     printAndLog("Error in PUT file transfer for IP_ADDR: " + clientIp + ": " + e.getMessage());
@@ -263,9 +285,14 @@ public class FTPServer {
             }
         }
 
+
+
         /**
          * Handles the QUIT command to close the client connection.
-        */
+         * 
+         * @param out The output stream to send a goodbye message to the client.
+         * @throws IOException If an I/O error occurs while closing the client socket.
+         */
         private void handleQUIT(PrintWriter out) throws IOException {
             out.println("Goodbye!"); // Inform the client the server is closing the connection
             out.flush();
@@ -277,9 +304,11 @@ public class FTPServer {
 
     /**
      * Utility method to log messages both to the console and log file.
-    */
+     * 
+     * @param message The message to log.
+     */
     private static void printAndLog(String message) {
         System.out.println(message);
         LOGGER.info(message);
     }
-} 
+}

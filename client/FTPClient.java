@@ -113,6 +113,7 @@ public class FTPClient {
 
     /**
      * Reads the server's response for a command.
+    * 
     * @param in The input stream from the server.
     * @throws IOException If an I/O error occurs.
     */
@@ -125,15 +126,17 @@ public class FTPClient {
 
     /**
      * Reads the transfer port information from the server.
-    * @param in The input stream from the server.
-    * @return The transfer port number.
-    * @throws IOException If an I/O error occurs.
-    */
+     * @param in The input stream from the server.
+     * @return The transfer port number.
+     * @throws IOException If an I/O error occurs.
+     */
     private static String readTransferPort(BufferedReader in) throws IOException {
         String transferInfo = in.readLine();
+        printAndLog("Received transfer info: " + transferInfo);  // Log for debugging
         if (transferInfo.startsWith("TRANSFER ")) {
-            return transferInfo.split(" ")[1]; // Return the port number
+            return transferInfo.split(" ")[1]; // Extract and return the port number
         } else if (transferInfo.startsWith("ERROR")) {
+            printAndLog("Error response from server: " + transferInfo);
             return "ERROR: File not found";
         }
         throw new IOException("Transfer port information not received correctly.");
@@ -141,61 +144,72 @@ public class FTPClient {
 
     /**
      * Handles the GET operation for downloading a file from the server.
-    * @param fileName The name of the file to download.
-    * @param hostName The host name of the server.
-    * @param port The port number for the transfer socket.
-    * @throws IOException If an I/O error occurs.
-    */
+     * @param fileName The name of the file to download.
+     * @param hostName The host name of the server.
+     * @param port The port number for the transfer socket.
+     * @throws IOException If an I/O error occurs.
+     */
     private static void transferGET(String fileName, String hostName, int port) throws IOException {
-        try (
-            Socket transferSocket = new Socket(hostName, port);
+        printAndLog("Attempting to connect to transfer port " + port + " for GET operation.");
+        try (Socket transferSocket = new Socket(hostName, port);
             BufferedInputStream bis = new BufferedInputStream(transferSocket.getInputStream());
-            FileOutputStream fos = new FileOutputStream(fileName, false) // Overwrite mode
-        ) {
+            FileOutputStream fos = new FileOutputStream(fileName, false)) { // Overwrite mode
+
+            printAndLog("Connected to transfer port " + port + " for GET operation.");
             byte[] buffer = new byte[4096];
             int bytesRead;
             while ((bytesRead = bis.read(buffer)) != -1) {
                 fos.write(buffer, 0, bytesRead); // Write file data
             }
             fos.flush();
-            printAndLog("File " + fileName + " downloaded.");
+            printAndLog("File " + fileName + " successfully downloaded.");
+        } catch (IOException e) {
+            printAndLog("Error during GET file transfer: " + e.getMessage());
+            throw e;
         }
     }
 
     /**
      * Handles the PUT operation for uploading a file to the server.
-    * @param fileName The name of the file to upload.
-    * @param hostName The host name of the server.
-    * @param port The port number for the transfer socket.
-    * @throws IOException If an I/O error occurs.
-    */
+     * @param fileName The name of the file to upload.
+     * @param hostName The host name of the server.
+     * @param port The port number for the transfer socket.
+     * @throws IOException If an I/O error occurs.
+     */
     private static void transferPUT(String fileName, String hostName, int port) throws IOException {
         File file = new File(fileName);
         if (file.exists() && !file.isDirectory()) {
-            try (
-                Socket transferSocket = new Socket(hostName, port);
+            printAndLog("Attempting to connect to transfer port " + port + " for PUT operation.");
+            try (Socket transferSocket = new Socket(hostName, port);
                 BufferedOutputStream bos = new BufferedOutputStream(transferSocket.getOutputStream());
-                FileInputStream fis = new FileInputStream(file)
-            ) {
+                FileInputStream fis = new FileInputStream(file)) {
+
+                printAndLog("Connected to transfer port " + port + " for PUT operation.");
                 byte[] buffer = new byte[4096];
                 int bytesRead;
                 while ((bytesRead = fis.read(buffer)) != -1) {
                     bos.write(buffer, 0, bytesRead);  // Send file data
                 }
                 bos.flush(); // Ensure everything is flushed
-                printAndLog("File " + fileName + " uploaded.");
+                printAndLog("File " + fileName + " successfully uploaded.");
+            } catch (IOException e) {
+                printAndLog("Error during PUT file transfer: " + e.getMessage());
+                throw e;
             }
         } else {
             printAndLog("File not found: " + fileName);
         }
     }
 
+
+
     /**
      * Logs the details of a file transfer (GET/PUT), including file size and throughput.
+    * 
     * @param operation The type of operation (GET/PUT).
-    * @param fileName The name of the file being transferred.
+    * @param fileName  The name of the file being transferred.
     * @param startTime The start time of the transfer.
-    * @param endTime The end time of the transfer.
+    * @param endTime   The end time of the transfer.
     * @throws IOException If an I/O error occurs while logging file size.
     */
     private static void logTransferDetails(String operation, String fileName, long startTime, long endTime) throws IOException {
@@ -210,10 +224,11 @@ public class FTPClient {
 
     /**
      * Utility method to print messages to the console and log them.
+    * 
     * @param message The message to log.
     */
     private static void printAndLog(String message) {
         System.out.println(message);
         LOGGER.info(message);
     }
-}  
+}   
