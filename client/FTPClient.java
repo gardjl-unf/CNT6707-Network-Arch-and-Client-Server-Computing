@@ -11,6 +11,14 @@ import java.io.*;
 import java.net.*;
 import java.util.logging.*;
 
+/**
+ * FTP client program that connects to an FTP server and allows the user to interact with the server using the following commands:
+ * 1) GET <file> - Download a file from the server
+ * 2) PUT <file> - Upload a file to the server
+ * 3) CD <directory> - Change the current directory on the server
+ * 4) LS - List the contents of the current directory on the server
+ * 5) QUIT - Disconnect from the server and exit the client
+ */
 public class FTPClient {
     static final Logger LOGGER = Logger.getLogger("FTPClient");
 
@@ -50,9 +58,11 @@ public class FTPClient {
             menu(out, in, stdIn);
 
         } catch (UnknownHostException e) {
+            // If the host is not found, log the error and exit
             printAndLog("Unknown host: " + hostName);
             System.exit(1);
         } catch (IOException e) {
+            // If an I/O error occurs, log the error and exit
             printAndLog("Couldn't get I/O for the connection to " + hostName + ":" + portNumber);
             LOGGER.severe(e.getMessage());
             e.printStackTrace();
@@ -62,10 +72,14 @@ public class FTPClient {
 
     /**
      * Menu system for user interaction
+     * @param out The PrintWriter for sending commands to the server
+     * @param in The BufferedReader for reading responses from the server
+     * @param stdIn The BufferedReader for reading user input
+     * @throws IOException If an I/O error occurs while reading user input
     */
     private static void menu(PrintWriter out, BufferedReader in, BufferedReader stdIn) throws IOException {
         while (true) {
-            System.out.println("Menu:\n1) GET\n2) PUT\n3) CD\n4) LS\n5) QUIT");
+            System.out.println("\nMenu:\n1) GET\n2) PUT\n3) CD\n4) LS\n5) QUIT");
             System.out.print("Enter choice: ");
             String choice = stdIn.readLine();
             switch (choice) {
@@ -117,6 +131,10 @@ public class FTPClient {
 
     /**
      * Handles the file receiving for the GET command.
+     * @param fileName The name of the file to download.
+     * @param out The PrintWriter for sending commands to the server.
+     * @param in The BufferedReader for reading responses from the server.
+     * @throws IOException If an I/O error occurs while receiving the file.
     */
     private static void receiveFile(String fileName, PrintWriter out, BufferedReader in) throws IOException {
         out.println("GET " + fileName); // Send GET command
@@ -141,6 +159,10 @@ public class FTPClient {
 
     /**
      * Handles the file sending for the PUT command.
+     * @param fileName The name of the file to upload.
+     * @param out The PrintWriter for sending commands to the server.
+     * @param in The BufferedReader for reading responses from the server.
+     * @throws IOException If an I/O error occurs while sending the file.
     */
     private static void sendFile(String fileName, PrintWriter out, BufferedReader in) throws IOException {
         out.println("PUT " + fileName); // Send PUT command

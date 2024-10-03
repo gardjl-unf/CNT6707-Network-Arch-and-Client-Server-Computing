@@ -91,6 +91,14 @@ public class FTPServer {
         scanner.close();
     }
 
+    /**
+     * ClientHandler class to handle individual client connections in separate threads.
+     * Each client connection is handled by a separate instance of this class.
+     * The class implements the Runnable interface to run in a separate thread.
+     * The class handles the LS, CD, GET, PUT, and QUIT commands.
+     * The class maintains the current directory for each client.
+     * The class uses a static ROOT_DIR for the server root directory.
+     */
     private static class ClientHandler implements Runnable {
         private final Socket clientSocket;
         private final String clientAddress; // Store client address for logging
@@ -104,6 +112,9 @@ public class FTPServer {
             printAndLog("ClientHandler initialized for: " + clientAddress);
         }
     
+        /**
+         * Run method to handle client connections and execute commands.
+        */
         @Override
         public void run() {
             printAndLog("Handling client connection from: " + clientAddress);
@@ -136,6 +147,7 @@ public class FTPServer {
                             break;
                     }
                 }
+            // Handle exceptions and close the client connection
             } catch (IOException e) {
                 printAndLog("Exception in client handling for " + clientAddress + ": " + e.getMessage());
             }
@@ -143,6 +155,7 @@ public class FTPServer {
     
         /**
          * Handles the LS command to list files in the current directory in the desired format.
+         * @param out The output writer to communicate with the client.
          */
         private void handleLS(PrintWriter out) {
             File dir = new File(currentDir);
@@ -152,18 +165,18 @@ public class FTPServer {
                 Arrays.sort(files, (f1, f2) -> f1.getName().compareToIgnoreCase(f2.getName()));
     
                 out.println("Directory:\t" + currentDir);
-                out.println(".");
-                out.println("..");
+                out.println("\t.");
+                out.println("\t..");
     
                 for (File file : files) {
                     if (file.isDirectory()) {
-                        out.println("/" + file.getName() + "/");
+                        out.println("\t/" + file.getName() + "/");
                     }
                 }
     
                 for (File file : files) {
                     if (!file.isDirectory()) {
-                        out.println("/" + file.getName());
+                        out.println("\t/" + file.getName());
                     }
                 }
             }
@@ -174,6 +187,8 @@ public class FTPServer {
     
         /**
          * Handles the CD command to change the current directory.
+         * @param command The command array containing the directory to change to.
+         * @param out The output writer to communicate with the client.
          */
         private void handleCD(String[] command, PrintWriter out) {
             if (command.length > 1) {
@@ -197,6 +212,9 @@ public class FTPServer {
     
         /**
          * Handles the GET command for file download.
+         * @param command The command array containing the file to download.
+         * @param out The output writer to communicate with the client.
+         * @throws IOException If an I/O error occurs while sending the file.
          */
         private void handleGET(String[] command, PrintWriter out) throws IOException {
             if (command.length > 1) {
@@ -227,6 +245,9 @@ public class FTPServer {
     
         /**
          * Handles the PUT command for file upload.
+         * @param command The command array containing the file to upload.
+         * @param out The output writer to communicate with the client.
+         * @throws IOException If an I/O error occurs while receiving the file.
          */
         private void handlePUT(String[] command, PrintWriter out) throws IOException {
             if (command.length > 1) {
