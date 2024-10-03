@@ -17,10 +17,15 @@ import java.util.logging.*;
  * 2) PUT <file> - Upload a file to the server
  * 3) CD <directory> - Change the current directory on the server
  * 4) LS - List the contents of the current directory on the server
+ * 5) Switch transfer mode (TCP/UDP)
+ * 6) Enable testing mode (GET/PUT performed NUM_TESTS times and average time/throughput is calculated)
  * 5) QUIT - Disconnect from the server and exit the client
  */
 public class FTPClient {
     static final Logger LOGGER = Logger.getLogger("FTPClient");
+    static final int NUM_TESTS = 10;
+    static boolean testingMode = false;
+    static boolean udpMode = false;
 
     public static void main(String[] args) throws IOException {
         System.out.println("Starting FTP Client...");
@@ -71,7 +76,9 @@ public class FTPClient {
     */
     private static void menu(PrintWriter out, BufferedReader in, BufferedReader stdIn) throws IOException {
         while (true) {
-            System.out.println("\nMenu:\n1) GET\n2) PUT\n3) CD\n4) LS\n5) QUIT");
+            String transferModeMenu = "Toggle Transfer Mode ("+ (!udpMode ? "[" : "") + "TCP" + (!udpMode ? "]" : "") + "/" + (udpMode ? "[" : "") + "UDP" + (udpMode ? "]" : "") + ")";
+        String testingModeMenu = "Toggle Testing Mode (" + (testingMode ? "[" : "") + "ON" + (testingMode ? "]" : "") + "/" + (!testingMode ? "[" : "") + "OFF" + (!testingMode ? "]" : "") + ")";
+            System.out.printf("\nFTP Client Menu:\n1) GET\n2) PUT\n3) CD\n4) LS\n5) %s\n6) %s\n7) QUIT\n", transferModeMenu, testingModeMenu);
             System.out.print("Enter choice: ");
             String choice = stdIn.readLine();
             switch (choice) {
@@ -111,6 +118,15 @@ public class FTPClient {
                     }
                     break;
                 case "5":
+                    udpMode = !udpMode;
+                    out.println("MODE " + (udpMode ? "UDP" : "TCP"));
+                    printAndLog("Transfer mode switched to " + (udpMode ? "UDP" : "TCP"));
+                    break;
+                case "6":
+                    testingMode = !testingMode;
+                    printAndLog("Testing mode " + (testingMode ? "enabled" : "disabled"));
+                    break;
+                case "7":
                     out.println("QUIT");
                     printAndLog(in.readLine());
                     return;
