@@ -141,6 +141,9 @@ public class FTPServer {
                         case "PUT":
                             handlePUT(command, out);
                             break;
+                        case "MODE":
+                            udpMode = !udpMode; // Toggle UDP mode
+                            break;
                         case "QUIT":
                             handleQUIT(out);
                             return;  // Close this client handler after QUIT

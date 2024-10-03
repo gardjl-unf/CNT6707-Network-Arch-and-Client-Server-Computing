@@ -119,7 +119,7 @@ public class FTPClient {
                     break;
                 case "5":
                     udpMode = !udpMode;
-                    out.println("MODE " + (udpMode ? "UDP" : "TCP"));
+                    out.println("MODE");
                     printAndLog("Transfer mode switched to " + (udpMode ? "UDP" : "TCP"));
                     break;
                 case "6":
