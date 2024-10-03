@@ -1,4 +1,20 @@
-Get-Random -Minimum 0 -Maximum 255 | Out-File "file1MB.dat" -Encoding Byte -Append -Count 1048576
-Get-Random -Minimum 0 -Maximum 255 | Out-File "file25MB.dat" -Encoding Byte -Append -Count 26214400
-Get-Random -Minimum 0 -Maximum 255 | Out-File "file50MB.dat" -Encoding Byte -Append -Count 52428800
-Get-Random -Minimum 0 -Maximum 255 | Out-File "file100MB.dat" -Encoding Byte -Append -Count 104857600
+# Function to generate a random binary file of a specified size (in bytes)
+function Generate-RandomFile {
+    param (
+        [string]$fileName,
+        [int]$fileSizeBytes
+    )
+    
+    $random = New-Object Random
+    $buffer = New-Object byte[] $fileSizeBytes
+    $random.NextBytes($buffer)
+    
+    # Write the binary data to the file
+    [System.IO.File]::WriteAllBytes($fileName, $buffer)
+}
+
+# Generate test files of various sizes
+Generate-RandomFile -fileName "file1MB.dat" -fileSizeBytes 1048576  # 1MB
+Generate-RandomFile -fileName "file25MB.dat" -fileSizeBytes 26214400 # 25MB
+Generate-RandomFile -fileName "file50MB.dat" -fileSizeBytes 52428800 # 50MB
+Generate-RandomFile -fileName "file100MB.dat" -fileSizeBytes 104857600 # 100MB
