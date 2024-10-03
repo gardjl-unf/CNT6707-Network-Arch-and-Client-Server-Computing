@@ -1,14 +1,15 @@
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.FileHandler;
-import java.util.logging.SimpleFormatter;
+import java.util.logging.Logger;
 
 public abstract class LogToFile {
     public static void logToFile(Logger logger, String logFile) {
         try {
-            FileHandler fh = new FileHandler(logFile, true);  // Append mode to prevent overwriting
+            FileHandler fh = new FileHandler(logFile, true);  // Append mode
             logger.addHandler(fh);
-            SimpleFormatter formatter = new SimpleFormatter();
+
+            // Use the custom formatter for the log format
+            CustomLogFormatter formatter = new CustomLogFormatter();
             fh.setFormatter(formatter);
 
             // Disable console output for the logger (remove default handlers)

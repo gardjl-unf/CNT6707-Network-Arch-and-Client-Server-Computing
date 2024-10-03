@@ -47,14 +47,6 @@ public class FTPClient {
         ) {
             printAndLog("Connection successful to " + hostName + ":" + portNumber);
 
-            // Automatically send an LS command on login to list the initial directory contents
-            out.println("LS");
-            String responseLine;
-            while (!(responseLine = in.readLine()).equals("EOF")) {
-                printAndLog(responseLine);
-            }
-
-            // After the LS, switch to the menu
             menu(out, in, stdIn);
 
         } catch (UnknownHostException e) {

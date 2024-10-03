@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.util.Scanner;
 import java.util.logging.*;
 import java.util.Arrays;
+import java.util.zip.CRC32;
 
 /**
  * FTPServer handles incoming FTP client connections, executing commands such as LS, CD, GET, and PUT.
@@ -104,6 +105,7 @@ public class FTPServer {
         private final String clientAddress; // Store client address for logging
         private static final String ROOT_DIR = System.getProperty("user.dir");
         private String currentDir;
+        private boolean udpMode = true; // UDP mode flag
     
         ClientHandler(Socket clientSocket) {
             this.clientSocket = clientSocket;
@@ -157,26 +159,32 @@ public class FTPServer {
          * Handles the LS command to list files in the current directory in the desired format.
          * @param out The output writer to communicate with the client.
          */
+        /**
+         * Handles the LS command to list files in the current directory in the desired format.
+        * @param out The output writer to communicate with the client.
+        */
         private void handleLS(PrintWriter out) {
             File dir = new File(currentDir);
             File[] files = dir.listFiles();
-    
+        
             if (files != null) {
                 Arrays.sort(files, (f1, f2) -> f1.getName().compareToIgnoreCase(f2.getName()));
-    
-                out.println("Directory:\t" + currentDir);
-                out.println("\t.");
-                out.println("\t..");
-    
+                String OUTPUT_FORMAT = "  %-50s %-30s";
+        
+                out.println("Directory: " + currentDir);
+                out.println(OUTPUT_FORMAT.formatted("Name", "Size"));
+                out.println(OUTPUT_FORMAT.formatted(".", "<DIR>"));
+                out.println(OUTPUT_FORMAT.formatted("..", "<DIR>"));
+        
                 for (File file : files) {
                     if (file.isDirectory()) {
-                        out.println("\t/" + file.getName() + "/");
+                        out.println(OUTPUT_FORMAT.formatted("/" + file.getName() + "/", "<DIR>"));
                     }
                 }
-    
+        
                 for (File file : files) {
                     if (!file.isDirectory()) {
-                        out.println("\t/" + file.getName());
+                        out.println(OUTPUT_FORMAT.formatted(file.getName(), file.length() + " bytes"));  
                     }
                 }
             }
