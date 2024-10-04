@@ -14,7 +14,6 @@ public class CustomLogFormatter extends Formatter {
 
         // Get the class and method name
         String sourceClass = record.getSourceClassName();
-        String sourceMethod = record.getSourceMethodName();
 
         // Get the log level (severity)
         String logLevel = record.getLevel().getName();
@@ -23,7 +22,6 @@ public class CustomLogFormatter extends Formatter {
         return String.format("%s:%s:%s:%s:\t%s%n",
                 timeStamp,              // Short date and time
                 sourceClass,            // Class name
-                sourceMethod,           // Method name
                 logLevel,               // Log level (severity)
                 record.getMessage()     // Actual log message
         );
