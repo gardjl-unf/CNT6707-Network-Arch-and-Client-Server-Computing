@@ -8,8 +8,12 @@
  */
 
 import java.io.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.Scanner;
 import java.util.logging.*;
 import java.util.Arrays;
@@ -105,7 +109,7 @@ public class FTPServer {
         private final String clientAddress; // Store client address for logging
         private static final String ROOT_DIR = System.getProperty("user.dir");
         private String currentDir;
-        private boolean udpMode = true; // UDP mode flag
+        private boolean udpMode = false; // UDP mode flag
     
         ClientHandler(Socket clientSocket) {
             this.clientSocket = clientSocket;
@@ -231,22 +235,71 @@ public class FTPServer {
             if (command.length > 1) {
                 File file = new File(currentDir + File.separator + command[1]);
                 if (file.exists() && !file.isDirectory()) {
-                    try (ServerSocket transferSocket = new ServerSocket(0)) {
-                        out.println("READY " + transferSocket.getLocalPort()); // Inform the client of the new port
-                        try (Socket fileTransferSocket = transferSocket.accept();
-                             FileInputStream fis = new FileInputStream(file);
-                             BufferedOutputStream bos = new BufferedOutputStream(fileTransferSocket.getOutputStream())) {
+                    long fileSize = file.length();  // Get file size
+                    if (!udpMode) {
+                        // Existing TCP code (no changes)
+                        try (ServerSocket transferSocket = new ServerSocket(0)) {
+                            out.println("READY " + transferSocket.getLocalPort() + " " + fileSize);  // Send file size
+                            try (Socket fileTransferSocket = transferSocket.accept();
+                                 FileInputStream fis = new FileInputStream(file);
+                                 BufferedOutputStream bos = new BufferedOutputStream(fileTransferSocket.getOutputStream())) {
+                                byte[] buffer = new byte[4096];
+                                int bytesRead;
+                                while ((bytesRead = fis.read(buffer)) != -1) {
+                                    bos.write(buffer, 0, bytesRead);
+                                }
+                                bos.flush();
+                            }
+                        }
+                    } else {
+                        // UDP mode
+                        DatagramSocket datagramSocket = new DatagramSocket(); // Create DatagramSocket for sending data
+                        datagramSocket.setSoTimeout(5000); // Timeout for receiving packets
+                        InetAddress clientAddress = clientSocket.getInetAddress(); // Client IP
+                        out.println("READY " + datagramSocket.getLocalPort() + " " + fileSize);  // Server tells client it's ready
+        
+                        // Wait for the client to send its local port
+                        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                        String clientResponse = in.readLine();
+                        if (clientResponse != null && clientResponse.startsWith("CLIENT_READY")) {
+                            int clientPort = Integer.parseInt(clientResponse.split(" ")[1]);  // Get client's port
+        
+                            // Start sending file data
+                            FileInputStream fis = new FileInputStream(file);
+                            CRC32 crc = new CRC32();
                             byte[] buffer = new byte[4096];
                             int bytesRead;
+        
                             while ((bytesRead = fis.read(buffer)) != -1) {
-                                bos.write(buffer, 0, bytesRead);
+                                // Calculate CRC32 for the data
+                                crc.update(buffer, 0, bytesRead);
+                                long checksum = crc.getValue();
+        
+                                // Create a packet with data + CRC32 at the end
+                                ByteBuffer byteBuffer = ByteBuffer.allocate(bytesRead + Long.BYTES);
+                                byteBuffer.put(buffer, 0, bytesRead); // Add data
+                                byteBuffer.putLong(checksum);         // Add CRC32 checksum
+        
+                                // Send packet to client's port
+                                DatagramPacket packet = new DatagramPacket(byteBuffer.array(), byteBuffer.capacity(), clientAddress, clientPort);
+                                datagramSocket.send(packet);
+        
+                                // Reset CRC32 for next packet
+                                crc.reset();
                             }
-                            bos.flush();
-                            printAndLog("File " + command[1] + " sent to client: " + clientAddress);
+        
+                            // Send a 0-byte packet to signal end of file
+                            byte[] endOfFileSignal = new byte[0]; // Create a 0-byte size signal
+                            DatagramPacket endPacket = new DatagramPacket(endOfFileSignal, endOfFileSignal.length, clientAddress, clientPort);
+                            datagramSocket.send(endPacket);
+        
+                            fis.close();
+                            datagramSocket.close();
+                            printAndLog("File transfer completed successfully to: " + clientAddress);
                         }
                     }
                 } else {
-                    out.println("ERROR: File not found");
+                    out.println("ERROR: File not found.");
                 }
             } else {
                 out.println("ERROR: No file specified for GET command.");
@@ -261,26 +314,85 @@ public class FTPServer {
          * @throws IOException If an I/O error occurs while receiving the file.
          */
         private void handlePUT(String[] command, PrintWriter out) throws IOException {
-            if (command.length > 1) {
-                try (ServerSocket transferSocket = new ServerSocket(0)) {
-                    out.println("READY " + transferSocket.getLocalPort()); // Inform the client of the new port
-                    try (Socket fileTransferSocket = transferSocket.accept();
-                         BufferedInputStream bis = new BufferedInputStream(fileTransferSocket.getInputStream());
-                         FileOutputStream fos = new FileOutputStream(new File(currentDir, command[1]))) {
-                        byte[] buffer = new byte[4096];
-                        int bytesRead;
-                        while ((bytesRead = bis.read(buffer)) != -1) {
-                            fos.write(buffer, 0, bytesRead);
+            if (command.length > 2) {
+                long fileSize = Long.parseLong(command[2]);  // Get file size from the client
+                File file = new File(currentDir, command[1]);
+        
+                if (!udpMode) {
+                    // TCP mode
+                    try (ServerSocket transferSocket = new ServerSocket(0)) {
+                        out.println("READY " + transferSocket.getLocalPort() + " " + fileSize);  // Send file size
+                        try (Socket fileTransferSocket = transferSocket.accept();
+                             BufferedInputStream bis = new BufferedInputStream(fileTransferSocket.getInputStream());
+                             FileOutputStream fos = new FileOutputStream(new File(currentDir, command[1]))) {
+                            byte[] buffer = new byte[4096];
+                            int bytesRead;
+        
+                            while ((bytesRead = bis.read(buffer)) != -1) {
+                                fos.write(buffer, 0, bytesRead);
+                            }
+                            fos.flush();
                         }
-                        fos.flush();
-                        printAndLog("File " + command[1] + " received from client: " + clientAddress);
                     }
+                } else {
+                    // UDP mode
+                    DatagramSocket datagramSocket = new DatagramSocket();
+                    datagramSocket.setSoTimeout(5000); // Timeout for receiving packets
+        
+                    // Notify the client that the server is ready for UDP transfer
+                    out.println("READY " + datagramSocket.getLocalPort() + " " + fileSize);  // Send file size 
+        
+                    FileOutputStream fos = new FileOutputStream(new File(currentDir, command[1]));
+                    CRC32 crc = new CRC32();
+                    byte[] buffer = new byte[4096 + Long.BYTES]; // Include CRC32 in buffer size
+        
+                    while (true) {
+                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                        datagramSocket.receive(packet);
+        
+                        int packetLength = packet.getLength();
+                        if (packetLength == 0) {
+                            break;
+                        }
+        
+                        int dataLength = packetLength - Long.BYTES; // Data without CRC32
+        
+                        if (dataLength < 0) {
+                            printAndLog("Invalid packet size detected. Aborting.");
+                            break;
+                        }
+        
+                        // Extract CRC32 from packet
+                        ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
+                        byte[] data = new byte[dataLength];
+                        byteBuffer.get(data); // Extract data
+                        long receivedChecksum = byteBuffer.getLong(); // Extract CRC32 checksum
+        
+                        // Validate CRC32
+                        crc.update(data, 0, dataLength);
+                        long calculatedChecksum = crc.getValue();
+                        if (calculatedChecksum != receivedChecksum) {
+                            printAndLog("CRC32 mismatch. Aborting transfer.");
+                            out.println("ERROR: CRC32 checksum mismatch");
+                            fos.close();
+                            datagramSocket.close();
+                            return;
+                        }
+        
+                        fos.write(data, 0, dataLength); // Write to file
+                        crc.reset(); // Reset for the next packet
+                    }
+        
+                    fos.close();
+                    datagramSocket.close();
+                    printAndLog("File upload completed successfully.");
                 }
             } else {
                 out.println("ERROR: No file specified.");
             }
             out.flush();
         }
+        
     
         /**
          * Handles the QUIT command, closing the client connection.
@@ -305,4 +417,4 @@ public class FTPServer {
         System.out.println(message);
         LOGGER.info(message);
     }
-} 
+}

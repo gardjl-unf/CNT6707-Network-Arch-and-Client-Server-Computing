@@ -9,7 +9,9 @@
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.util.logging.*;
+import java.util.zip.CRC32;
 
 /**
  * FTP client program that connects to an FTP server and allows the user to interact with the server using the following commands:
@@ -145,25 +147,100 @@ public class FTPClient {
      * @throws IOException If an I/O error occurs while receiving the file.
     */
     private static void receiveFile(String fileName, PrintWriter out, BufferedReader in) throws IOException {
-        out.println("GET " + fileName); // Send GET command
-        String serverResponse = in.readLine();
-        if (serverResponse.startsWith("READY")) {
-            int port = Integer.parseInt(serverResponse.split(" ")[1]);
-            try (Socket transferSocket = new Socket("localhost", port);
-                BufferedInputStream bis = new BufferedInputStream(transferSocket.getInputStream());
-                FileOutputStream fos = new FileOutputStream(fileName)) {
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = bis.read(buffer)) != -1) {
-                    fos.write(buffer, 0, bytesRead);
+        for (int i = 0; i < (testingMode ? NUM_TESTS : 1); i++) {
+            out.println("GET " + fileName);  // Send GET command to the server
+            String serverResponse = in.readLine();
+            if (serverResponse != null && serverResponse.startsWith("READY")) {
+                String[] readyResponse = serverResponse.split(" ");
+                int port = Integer.parseInt(readyResponse[1]); // Server's transfer port
+                int totalBytes = Integer.parseInt(readyResponse[2]);  // File size received
+    
+                if (!udpMode) {
+                    // TCP mode
+                    try (Socket transferSocket = new Socket("localhost", port);
+                         BufferedInputStream bis = new BufferedInputStream(transferSocket.getInputStream());
+                         FileOutputStream fos = new FileOutputStream(fileName)) {
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        int currentBytes = 0;
+                        while ((bytesRead = bis.read(buffer)) != -1) {
+                            fos.write(buffer, 0, bytesRead);
+                            currentBytes += bytesRead;
+    
+                            // Display transfer progress
+                            transferDisplay(totalBytes, currentBytes, 0);  // No CRC for TCP
+                        }
+                        fos.flush();
+                    }
+                } else {
+                    // UDP mode
+                    DatagramSocket datagramSocket = new DatagramSocket();
+                    datagramSocket.setSoTimeout(5000); // Timeout to avoid indefinite waiting
+    
+                    InetAddress serverAddress = InetAddress.getByName("localhost"); // Server's address
+                    out.println("CLIENT_READY " + datagramSocket.getLocalPort());  // Send client's port to the server
+                    
+                    FileOutputStream fos = new FileOutputStream(fileName);
+                    CRC32 crc = new CRC32();
+                    byte[] buffer = new byte[4096 + Long.BYTES]; // Buffer to hold data and CRC32
+                    int currentBytes = 0;
+    
+                    while (true) {
+                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                        try {
+                            datagramSocket.receive(packet); // Receive packet from server
+                        } catch (SocketTimeoutException e) {
+                            printAndLog("Timeout waiting for packets. No more packets received.");
+                            break;
+                        }
+    
+                        int dataLength = packet.getLength() - Long.BYTES;
+                        
+                        // Check if it's the end-of-file signal (empty packet)
+                        if (dataLength <= 0) {
+                            break;  // End of file signal received, exit loop
+                        }
+    
+                        // Only process data packets
+                        if (dataLength > 0) {
+                            // Extract CRC32 from the packet
+                            ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
+                            byte[] data = new byte[dataLength];
+                            byteBuffer.get(data);
+                            long receivedChecksum = byteBuffer.getLong();
+    
+                            // Validate CRC32
+                            crc.update(data, 0, dataLength);
+                            long calculatedChecksum = crc.getValue();
+                            if (calculatedChecksum != receivedChecksum) {
+                                printAndLog("CRC32 mismatch detected. Transfer failed.");
+                                fos.close();
+                                datagramSocket.close();
+                                return;
+                            }
+    
+                            fos.write(data, 0, dataLength);  // Write to file
+                            currentBytes += dataLength;
+    
+                            // Display transfer progress
+                            transferDisplay(totalBytes, currentBytes, (int) calculatedChecksum);
+    
+                            crc.reset(); // Reset CRC32 for next packet
+                        }
+                    }
+    
+                    fos.flush();  // Ensure all data is written to disk
+                    fos.close();  // Close file
+                    datagramSocket.close();  // Close socket
                 }
-                fos.flush();
-                printAndLog("File " + fileName + " downloaded.");
+            } else {
+                printAndLog("Server error: " + serverResponse);
             }
-        } else {
-            printAndLog("Server error: " + serverResponse);
         }
     }
+        
+
+    
 
     /**
      * Handles the file sending for the PUT command.
@@ -173,25 +250,81 @@ public class FTPClient {
      * @throws IOException If an I/O error occurs while sending the file.
     */
     private static void sendFile(String fileName, PrintWriter out, BufferedReader in) throws IOException {
-        out.println("PUT " + fileName); // Send PUT command
-        String serverResponse = in.readLine();
-        if (serverResponse.startsWith("READY")) {
-            int port = Integer.parseInt(serverResponse.split(" ")[1]);
-            try (Socket transferSocket = new Socket("localhost", port);
-                BufferedOutputStream bos = new BufferedOutputStream(transferSocket.getOutputStream());
-                FileInputStream fis = new FileInputStream(fileName)) {
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = fis.read(buffer)) != -1) {
-                    bos.write(buffer, 0, bytesRead);
+        for (int i = 0; i < (testingMode ? NUM_TESTS : 1); i++) {
+            File file = new File(fileName);
+            long fileSize = file.length();  // Get the actual file size
+    
+            out.println("PUT " + fileName + " " + fileSize);  // Send PUT command with file size
+    
+            String serverResponse = in.readLine();
+            if (serverResponse != null && serverResponse.startsWith("READY")) {
+                String[] readyResponse = serverResponse.split(" ");
+                int port = Integer.parseInt(readyResponse[1]); // Server's transfer port
+                int totalBytes = Integer.parseInt(readyResponse[2]);  // File size received
+    
+                if (!udpMode) {
+                    // TCP mode
+                    try (Socket transferSocket = new Socket("localhost", port);
+                         BufferedOutputStream bos = new BufferedOutputStream(transferSocket.getOutputStream());
+                         FileInputStream fis = new FileInputStream(fileName)) {
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        int currentBytes = 0;
+    
+                        while ((bytesRead = fis.read(buffer)) != -1) {
+                            bos.write(buffer, 0, bytesRead);
+                            currentBytes += bytesRead;
+    
+                            // Display transfer progress
+                            transferDisplay((int) fileSize, currentBytes, 0);  // No CRC for TCP
+                        }
+                        bos.flush();
+                    }
+                } else {
+                    // UDP mode
+                    DatagramSocket datagramSocket = new DatagramSocket();
+                    datagramSocket.setSoTimeout(5000);
+                    InetAddress serverAddress = InetAddress.getByName("localhost");
+                    CRC32 crc = new CRC32();
+    
+                    FileInputStream fis = new FileInputStream(fileName);
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    int currentBytes = 0;
+    
+                    while ((bytesRead = fis.read(buffer)) != -1) {
+                        crc.update(buffer, 0, bytesRead);
+                        long checksum = crc.getValue();
+    
+                        ByteBuffer byteBuffer = ByteBuffer.allocate(bytesRead + Long.BYTES);
+                        byteBuffer.put(buffer, 0, bytesRead);
+                        byteBuffer.putLong(checksum);
+    
+                        DatagramPacket packet = new DatagramPacket(byteBuffer.array(), byteBuffer.capacity(), serverAddress, port);
+                        datagramSocket.send(packet);
+    
+                        currentBytes += bytesRead;
+    
+                        // Display transfer progress
+                        transferDisplay((int) fileSize, currentBytes, (int) checksum);
+    
+                        crc.reset();
+                    }
+    
+                    // End-of-transfer signal (send empty packet)
+                    byte[] endOfFileSignal = new byte[0];
+                    DatagramPacket endPacket = new DatagramPacket(endOfFileSignal, endOfFileSignal.length, serverAddress, port);
+                    datagramSocket.send(endPacket);  // Send the EOF signal
+    
+                    fis.close();
+                    datagramSocket.close();
                 }
-                bos.flush();
-                printAndLog("File " + fileName + " uploaded.");
+            } else {
+                printAndLog("Server error: " + serverResponse);
             }
-        } else {
-            printAndLog("Server error: " + serverResponse);
         }
     }
+    
 
     /**
      * Logs the details of a file transfer (GET/PUT), including file size and throughput.
@@ -206,10 +339,44 @@ public class FTPClient {
         long fileSize = file.length();
         long duration = endTime - startTime;
         double throughput = (fileSize / (duration / 1000.0)) / 1024.0; // Throughput in KB/s
-        printAndLog(operation + " of " + fileName + " completed in " + duration + " ms");
+        printAndLog("\n" + operation + " of " + fileName + " completed in " + duration + " ms");
         printAndLog("File size: " + fileSize + " bytes");
         printAndLog("Throughput: " + throughput + " KB/s");
     }
+
+    /**
+     * Displays a progress bar for the file transfer.
+     * @param totalBytes The total number of bytes to transfer.
+     * @param currentBytes The number of bytes transferred so far.
+     * @param crc The CRC32 checksum of the transferred data.
+     */
+    private static void transferDisplay(int totalBytes, int currentBytes, int crc) {
+        int transferPercentage = (int) ((currentBytes / (double) totalBytes) * 100);
+    
+        // Calculate how much of the bar to fill. Minimum is 0, and maximum is 50.
+        int arrowPosition = Math.max(0, Math.min(50, transferPercentage / 2));
+    
+        // Build the progress bar display
+        String progressBar = "|"
+                + "=".repeat(arrowPosition)  // Filled portion
+                + ">".repeat(arrowPosition < 50 ? 1 : 0)  // Arrow
+                + " ".repeat(50 - arrowPosition)  // Empty portion
+                + "| ";
+    
+        // Print transfer percentage and byte count
+        System.out.print("\r" + progressBar
+                + transferPercentage + "% ("
+                + currentBytes + "/" + totalBytes + " bytes)");
+    
+        // Only print CRC if it is non-zero
+        if (crc != 0) {
+            System.out.print(" CRC32: 0x" + Integer.toHexString(crc));
+        }
+    
+        // Flush the output to ensure it updates in real-time
+        System.out.flush();
+    }
+    
 
     /**
      * Utility method to print messages to the console and log them.
@@ -219,4 +386,4 @@ public class FTPClient {
         System.out.println(message);
         LOGGER.info(message);
     }
-} 
+}
