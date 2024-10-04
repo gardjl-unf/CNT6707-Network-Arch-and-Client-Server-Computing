@@ -15,14 +15,14 @@ import java.util.zip.CRC32;
 
 /**
  * FTP client program that connects to an FTP server and allows the user to interact with the server using the following commands:
- * 1) GET <file> - Download a file from the server
- * 2) PUT <file> - Upload a file to the server
- * 3) CD <directory> - Change the current directory on the server
- * 4) LS - List the contents of the current directory on the server
- * 5) Switch transfer mode (TCP/UDP)
- * 6) Enable testing mode (GET/PUT performed NUM_TESTS times and average time/throughput is calculated)
- * 5) QUIT - Disconnect from the server and exit the client
- */
+* 1) GET <file> - Download a file from the server
+* 2) PUT <file> - Upload a file to the server
+* 3) CD <directory> - Change the current directory on the server
+* 4) LS - List the contents of the current directory on the server
+* 5) Switch transfer mode (TCP/UDP)
+* 6) Enable testing mode (GET/PUT performed NUM_TESTS times and average time/throughput is calculated)
+* 5) QUIT - Disconnect from the server and exit the client
+*/
 public class FTPClient {
     static final Logger LOGGER = Logger.getLogger("FTPClient");
     static final int NUM_TESTS = 10;
@@ -71,15 +71,15 @@ public class FTPClient {
 
     /**
      * Menu system for user interaction
-     * @param out The PrintWriter for sending commands to the server
-     * @param in The BufferedReader for reading responses from the server
-     * @param stdIn The BufferedReader for reading user input
-     * @throws IOException If an I/O error occurs while reading user input
+    * @param out The PrintWriter for sending commands to the server
+    * @param in The BufferedReader for reading responses from the server
+    * @param stdIn The BufferedReader for reading user input
+    * @throws IOException If an I/O error occurs while reading user input
     */
     private static void menu(PrintWriter out, BufferedReader in, BufferedReader stdIn) throws IOException {
         while (true) {
             String transferModeMenu = "Toggle Transfer Mode ("+ (!udpMode ? "[" : "") + "TCP" + (!udpMode ? "]" : "") + "/" + (udpMode ? "[" : "") + "UDP" + (udpMode ? "]" : "") + ")";
-        String testingModeMenu = "Toggle Testing Mode (" + (testingMode ? "[" : "") + "ON" + (testingMode ? "]" : "") + "/" + (!testingMode ? "[" : "") + "OFF" + (!testingMode ? "]" : "") + ")";
+            String testingModeMenu = "Toggle Testing Mode (" + (testingMode ? "[" : "") + "ON" + (testingMode ? "]" : "") + "/" + (!testingMode ? "[" : "") + "OFF" + (!testingMode ? "]" : "") + ")";
             System.out.printf("\nFTP Client Menu:\n1) GET\n2) PUT\n3) CD\n4) LS\n5) %s\n6) %s\n7) QUIT\n", transferModeMenu, testingModeMenu);
             System.out.print("Enter choice: ");
             String choice = stdIn.readLine();
@@ -87,18 +87,12 @@ public class FTPClient {
                 case "1":
                     System.out.print("Enter file name to download: ");
                     String getFileName = stdIn.readLine();
-                    long startTime = System.currentTimeMillis();
                     receiveFile(getFileName, out, in);
-                    long endTime = System.currentTimeMillis();
-                    logTransferDetails("GET", getFileName, startTime, endTime);
                     break;
                 case "2":
                     System.out.print("Enter file name to upload: ");
                     String putFileName = stdIn.readLine();
-                    startTime = System.currentTimeMillis();
                     sendFile(putFileName, out, in);
-                    endTime = System.currentTimeMillis();
-                    logTransferDetails("PUT", putFileName, startTime, endTime);
                     break;
                 case "3":
                     System.out.print("Enter directory to change to: ");
@@ -141,13 +135,18 @@ public class FTPClient {
 
     /**
      * Handles the file receiving for the GET command.
-     * @param fileName The name of the file to download.
-     * @param out The PrintWriter for sending commands to the server.
-     * @param in The BufferedReader for reading responses from the server.
-     * @throws IOException If an I/O error occurs while receiving the file.
+    * @param fileName The name of the file to download.
+    * @param out The PrintWriter for sending commands to the server.
+    * @param in The BufferedReader for reading responses from the server.
+    * @throws IOException If an I/O error occurs while receiving the file.
     */
     private static void receiveFile(String fileName, PrintWriter out, BufferedReader in) throws IOException {
-        for (int i = 0; i < (testingMode ? NUM_TESTS : 1); i++) {
+        long totalDuration = 0;  // Accumulate transfer times
+        long totalBytesTransferred = 0;  // To accumulate bytes transferred
+        int numRuns = testingMode ? NUM_TESTS : 1;
+
+        for (int i = 0; i < numRuns; i++) {
+            long startTime = System.currentTimeMillis();  // Start time for each run
             out.println("GET " + fileName);  // Send GET command to the server
             String serverResponse = in.readLine();
             if (serverResponse != null && serverResponse.startsWith("READY")) {
@@ -158,14 +157,15 @@ public class FTPClient {
                 if (!udpMode) {
                     // TCP mode
                     try (Socket transferSocket = new Socket("localhost", port);
-                         BufferedInputStream bis = new BufferedInputStream(transferSocket.getInputStream());
-                         FileOutputStream fos = new FileOutputStream(fileName)) {
+                        BufferedInputStream bis = new BufferedInputStream(transferSocket.getInputStream());
+                        FileOutputStream fos = new FileOutputStream(fileName)) {
                         byte[] buffer = new byte[4096];
                         int bytesRead;
                         int currentBytes = 0;
                         while ((bytesRead = bis.read(buffer)) != -1) {
                             fos.write(buffer, 0, bytesRead);
                             currentBytes += bytesRead;
+                            totalBytesTransferred = currentBytes;
     
                             // Display transfer progress
                             transferDisplay(totalBytes, currentBytes, 0);  // No CRC for TCP
@@ -221,6 +221,7 @@ public class FTPClient {
     
                             fos.write(data, 0, dataLength);  // Write to file
                             currentBytes += dataLength;
+                            totalBytesTransferred = currentBytes;
     
                             // Display transfer progress
                             transferDisplay(totalBytes, currentBytes, (int) calculatedChecksum);
@@ -236,21 +237,28 @@ public class FTPClient {
             } else {
                 printAndLog("Server error: " + serverResponse);
             }
-        }
-    }
-        
 
-    
+            long endTime = System.currentTimeMillis();
+            long runDuration = endTime - startTime;  // Time for this run
+            totalDuration += runDuration;  // Accumulate total time
+        }
+        // Use the helper method to log the transfer details (average for test mode, single for non-test mode)
+        logTransferDetails(numRuns, totalDuration, totalBytesTransferred, fileName, "PUT");
+    }
 
     /**
      * Handles the file sending for the PUT command.
-     * @param fileName The name of the file to upload.
-     * @param out The PrintWriter for sending commands to the server.
-     * @param in The BufferedReader for reading responses from the server.
-     * @throws IOException If an I/O error occurs while sending the file.
+    * @param fileName The name of the file to upload.
+    * @param out The PrintWriter for sending commands to the server.
+    * @param in The BufferedReader for reading responses from the server.
+    * @throws IOException If an I/O error occurs while sending the file.
     */
     private static void sendFile(String fileName, PrintWriter out, BufferedReader in) throws IOException {
-        for (int i = 0; i < (testingMode ? NUM_TESTS : 1); i++) {
+        long totalDuration = 0;  // Accumulate transfer times
+        long totalBytesTransferred = 0;  // To accumulate bytes transferred
+        int numRuns = testingMode ? NUM_TESTS : 1;
+        for (int i = 0; i < numRuns; i++) {
+            long startTime = System.currentTimeMillis();  // Start time for each run
             File file = new File(fileName);
             long fileSize = file.length();  // Get the actual file size
     
@@ -265,8 +273,8 @@ public class FTPClient {
                 if (!udpMode) {
                     // TCP mode
                     try (Socket transferSocket = new Socket("localhost", port);
-                         BufferedOutputStream bos = new BufferedOutputStream(transferSocket.getOutputStream());
-                         FileInputStream fis = new FileInputStream(fileName)) {
+                        BufferedOutputStream bos = new BufferedOutputStream(transferSocket.getOutputStream());
+                        FileInputStream fis = new FileInputStream(fileName)) {
                         byte[] buffer = new byte[4096];
                         int bytesRead;
                         int currentBytes = 0;
@@ -274,6 +282,7 @@ public class FTPClient {
                         while ((bytesRead = fis.read(buffer)) != -1) {
                             bos.write(buffer, 0, bytesRead);
                             currentBytes += bytesRead;
+                            totalBytesTransferred = currentBytes;
     
                             // Display transfer progress
                             transferDisplay((int) fileSize, currentBytes, 0);  // No CRC for TCP
@@ -304,6 +313,7 @@ public class FTPClient {
                         datagramSocket.send(packet);
     
                         currentBytes += bytesRead;
+                        totalBytesTransferred = currentBytes;
     
                         // Display transfer progress
                         transferDisplay((int) fileSize, currentBytes, (int) checksum);
@@ -322,34 +332,46 @@ public class FTPClient {
             } else {
                 printAndLog("Server error: " + serverResponse);
             }
+            long endTime = System.currentTimeMillis();
+            long runDuration = endTime - startTime;  // Time for this run
+            totalDuration += runDuration;  // Accumulate total time
         }
+        logTransferDetails(numRuns, totalDuration, totalBytesTransferred, fileName, "GET");
     }
     
 
     /**
-     * Logs the details of a file transfer (GET/PUT), including file size and throughput.
-    * @param operation The type of operation (GET/PUT).
+     * Logs and prints the details of a file transfer, handling both single run and test mode.
+    * @param numRuns The number of runs (1 for a single run, NUM_TESTS for test mode).
+    * @param totalDuration The total duration of all runs in milliseconds.
+    * @param totalBytesTransferred The total number of bytes transferred.
     * @param fileName The name of the file being transferred.
-    * @param startTime The start time of the transfer.
-    * @param endTime The end time of the transfer.
-    * @throws IOException If an I/O error occurs while logging file size.
+    * @param operation The operation type ("GET" or "PUT").
     */
-    private static void logTransferDetails(String operation, String fileName, long startTime, long endTime) throws IOException {
-        File file = new File(fileName);
-        long fileSize = file.length();
-        long duration = endTime - startTime;
-        double throughput = (fileSize / (duration / 1000.0)) / 1024.0; // Throughput in KB/s
-        printAndLog("\n" + operation + " of " + fileName + " completed in " + duration + " ms");
-        printAndLog("File size: " + fileSize + " bytes");
-        printAndLog("Throughput: " + throughput + " KB/s");
+    private static void logTransferDetails(int numRuns, long totalDuration, long totalBytesTransferred, String fileName, String operation) {
+        if (numRuns > 1) {
+            // Test mode: display average statistics
+            long averageDuration = totalDuration / numRuns;
+            double averageThroughput = totalBytesTransferred / (averageDuration / 1000.0);  // Throughput in b/s
+            printAndLog("\nAverage transfer time for " + numRuns + " runs: " + averageDuration + " ms");
+            printAndLog("File size: " + totalBytesTransferred + " bytes");
+            printAndLog("Average throughput: " + (long) averageThroughput + " b/s");
+        } else {
+            // Single run: display detailed stats
+            long duration = totalDuration;  // Total duration is for the single run
+            double throughput = totalBytesTransferred / (duration / 1000.0);  // Throughput in b/s
+            printAndLog("\n" + operation + " of " + fileName + " completed in " + duration + " ms");
+            printAndLog("File size: " + totalBytesTransferred + " bytes");
+            printAndLog("Throughput: " + (long) throughput + " b/s");
+        }
     }
 
     /**
      * Displays a progress bar for the file transfer.
-     * @param totalBytes The total number of bytes to transfer.
-     * @param currentBytes The number of bytes transferred so far.
-     * @param crc The CRC32 checksum of the transferred data.
-     */
+    * @param totalBytes The total number of bytes to transfer.
+    * @param currentBytes The number of bytes transferred so far.
+    * @param crc The CRC32 checksum of the transferred data.
+    */
     private static void transferDisplay(int totalBytes, int currentBytes, int crc) {
         int transferPercentage = (int) ((currentBytes / (double) totalBytes) * 100);
     
