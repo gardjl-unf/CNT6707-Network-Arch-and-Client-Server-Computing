@@ -1,6 +1,10 @@
-/* Name: Jason Gardner (n01480000), Samhitha Yenugu (n01603653), Deepak Yadama (n01601954), Sankeerthi Kilaru (n01598034)
- * Date: 21 August 2024
- * Project: Project 1/2
+/* Author:  Jason Gardner (n01480000),
+ *          Samhitha Yenugu (n01603653), 
+ *          Deepak Yadama (n01601954), 
+ *          Sankeerthi Kilaru (n01598034),
+*           Nandhakumar Nallasamy (n01587716)
+ * Date: 4 October 2024
+ * Project: Project 2
  * File: FTPServer.java
  * CNT6707 - Network Architecture and Client/Server Computing
  * Description: Mutlithreaded FTP server program that uses threads to handle multiple clients
