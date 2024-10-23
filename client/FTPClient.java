@@ -1,10 +1,12 @@
 /* Author:  Jason Gardner (n01480000),
- * Date: 4 October 2024
+ * Date: 23 October 2024
  * Project: Project 2
  * File: FTPClient.java
  * CNT6707 - Network Architecture and Client/Server Computing
  * Description: FTP server program
  *              Commands: GET, PUT, CD, LS, QUIT
+ *              Transfer modes: TCP, UDP
+ *              Testing mode: GET/PUT performed NUM_TESTS times and average time/throughput is calculated
  */
 
 import java.io.*;
