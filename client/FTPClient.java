@@ -1,8 +1,4 @@
 /* Author:  Jason Gardner (n01480000),
- *          Samhitha Yenugu (n01603653), 
- *          Deepak Yadama (n01601954), 
- *          Sankeerthi Kilaru (n01598034),
-*           Nandhakumar Nallasamy (n01587716)
  * Date: 4 October 2024
  * Project: Project 2
  * File: FTPClient.java
@@ -194,7 +190,7 @@ public class FTPClient {
                         try {
                             datagramSocket.receive(packet); // Receive packet from server
                         } catch (SocketTimeoutException e) {
-                            printAndLog("Timeout waiting for packets. No more packets received.");
+                            printAndLog("\tTimeout waiting for packets. No more packets received.");
                             break;
                         }
     
