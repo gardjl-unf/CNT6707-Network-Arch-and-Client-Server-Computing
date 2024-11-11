@@ -19,9 +19,15 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Scanner;
-import java.util.logging.*;
 import java.util.Arrays;
 import java.util.zip.CRC32;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.logging.Formatter;
+import java.util.logging.LogRecord;
+import java.io.IOException;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
 
 /**
  * FTPServer handles incoming FTP client connections, executing commands such as LS, CD, GET, and PUT.
@@ -557,3 +563,51 @@ public class FTPServer {
         LOGGER.info(message);
     }
 }
+
+/**
+ * Utility class to set up logging to a file.
+*/
+class LogToFile {
+    public static void logToFile(Logger logger, String logFile) {
+        try {
+            FileHandler fh = new FileHandler(logFile, true);  // Append mode
+            logger.addHandler(fh);
+
+            // Use the custom formatter for the log format
+            CustomLogFormatter formatter = new CustomLogFormatter();
+            fh.setFormatter(formatter);
+
+            // Disable console output for the logger (remove default handlers)
+            logger.setUseParentHandlers(false);
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+/**
+ * Custom log formatter to format log messages with a timestamp and log level.
+*/
+class CustomLogFormatter extends Formatter {
+    // Define the date format
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy@HH:mm:ss");
+
+    @Override
+    public String format(LogRecord record) {
+        // Get the current date and time
+        String timeStamp = dateFormat.format(new Date(record.getMillis()));
+
+        // Get the log level (severity)
+        String logLevel = record.getLevel().getName();
+
+        // Format the log message according to your specifications
+        return String.format("%s:%s:\t%s%n",
+                timeStamp,              // Short date and time
+                logLevel,               // Log level (severity)
+                record.getMessage()     // Actual log message
+        );
+    }
+}
+ 

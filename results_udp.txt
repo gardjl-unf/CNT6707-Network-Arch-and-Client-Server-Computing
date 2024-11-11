@@ -1,0 +1,289 @@
+UDP GET
+Enter file name to download: file1MB.dat
+
+Starting run 1 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fcuenceReceived end-of-file signal.         
+
+Starting run 2 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fcuenceReceived end-of-file signal.         
+
+Starting run 3 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fcuenceReceived end-of-file signal.         
+
+Starting run 4 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fcuenceReceived end-of-file signal.         
+
+Starting run 5 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fcuenceReceived end-of-file signal.         
+
+Starting run 6 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fcuenceReceived end-of-file signal.         
+
+Starting run 7 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fcuenceReceived end-of-file signal.         
+
+Starting run 8 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fcuenceReceived end-of-file signal.         
+
+Starting run 9 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fcuenceReceived end-of-file signal.         
+
+Starting run 10 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fcuenceReceived end-of-file signal.         
+
+Average transfer time for 10 runs: 116 ms
+File size: 1048576 bytes
+Average throughput: 9039448 b/s
+
+Enter file name to download: file25MB.dat
+
+Starting run 1 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b   Received end-of-file signal.         
+
+Starting run 2 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b   Received end-of-file signal.         
+
+Starting run 3 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b   Received end-of-file signal.         
+
+Starting run 4 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b   Received end-of-file signal.         
+
+Starting run 5 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b   Received end-of-file signal.         
+
+Starting run 6 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b   Received end-of-file signal.         
+
+Starting run 7 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b   Received end-of-file signal.         
+
+Starting run 8 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b   Received end-of-file signal.         
+
+Starting run 9 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b   Received end-of-file signal.         
+
+Starting run 10 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b   Received end-of-file signal.         
+
+Average transfer time for 10 runs: 2609 ms
+File size: 26214400 bytes
+Average throughput: 10047681 b/s
+
+Enter file name to download: file50MB.dat
+
+Starting run 1 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346   Received end-of-file signal.         
+
+Starting run 2 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346   Received end-of-file signal.         
+
+Starting run 3 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346   Received end-of-file signal.         
+
+Starting run 4 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346   Received end-of-file signal.         
+
+Starting run 5 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346   Received end-of-file signal.         
+
+Starting run 6 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346   Received end-of-file signal.         
+
+Starting run 7 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346   Received end-of-file signal.         
+
+Starting run 8 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346   Received end-of-file signal.         
+
+Starting run 9 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346   Received end-of-file signal.         
+
+Starting run 10 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346   Received end-of-file signal.         
+
+Average transfer time for 10 runs: 5071 ms
+File size: 52428800 bytes
+Average throughput: 10338946 b/s
+
+Enter file name to download: file100MB.dat
+
+Starting run 1 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Received end-of-file signal.         
+
+Starting run 2 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Received end-of-file signal.         
+
+Starting run 3 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Received end-of-file signal.         
+
+Starting run 4 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Received end-of-file signal.         
+
+Starting run 5 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Received end-of-file signal.         
+
+Starting run 6 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Received end-of-file signal.         
+
+Starting run 7 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Received end-of-file signal.         
+
+Starting run 8 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Received end-of-file signal.         
+
+Starting run 9 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Received end-of-file signal.         
+
+Starting run 10 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Received end-of-file signal.         
+
+Average transfer time for 10 runs: 9942 ms
+File size: 104857600 bytes
+Average throughput: 10546932 b/s
+
+UDP PUT
+Enter file name to upload: file1MB.dat
+
+Starting run 1 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fc Sent end-of-transfer signal.             
+
+Starting run 2 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fc Sent end-of-transfer signal.             
+
+Starting run 3 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fc Sent end-of-transfer signal.             
+
+Starting run 4 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fc Sent end-of-transfer signal.             
+
+Starting run 5 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fc Sent end-of-transfer signal.             
+
+Starting run 6 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fc Sent end-of-transfer signal.             
+
+Starting run 7 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fc Sent end-of-transfer signal.             
+
+Starting run 8 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fc Sent end-of-transfer signal.             
+
+Starting run 9 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fc Sent end-of-transfer signal.             
+
+Starting run 10 of 10
+|==================================================| 100% (1048576/1048576 bytes) CRC32: 0xa5a094fc Sent end-of-transfer signal.             
+
+Average transfer time for 10 runs: 144 ms
+File size: 10485760 bytes
+Average throughput: 72817777 b/s
+
+Enter file name to upload: file25MB.dat
+
+Starting run 1 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b Sent end-of-transfer signal.           
+
+Starting run 2 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b Sent end-of-transfer signal.           
+
+Starting run 3 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b Sent end-of-transfer signal.           
+
+Starting run 4 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b Sent end-of-transfer signal.           
+
+Starting run 5 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b Sent end-of-transfer signal.           
+
+Starting run 6 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b Sent end-of-transfer signal.           
+
+Starting run 7 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b Sent end-of-transfer signal.           
+
+Starting run 8 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b Sent end-of-transfer signal.           
+
+Starting run 9 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b Sent end-of-transfer signal.           
+
+Starting run 10 of 10
+|==================================================| 100% (26214400/26214400 bytes) CRC32: 0x121cd01b Sent end-of-transfer signal.           
+
+Average transfer time for 10 runs: 3340 ms
+File size: 262144000 bytes
+Average throughput: 78486227 b/s
+
+Enter file name to upload: file50MB.dat
+
+Starting run 1 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346 Sent end-of-transfer signal.           
+
+Starting run 2 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346 Sent end-of-transfer signal.           
+
+Starting run 3 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346 Sent end-of-transfer signal.           
+
+Starting run 4 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346 Sent end-of-transfer signal.           
+
+Starting run 5 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346 Sent end-of-transfer signal.           
+
+Starting run 6 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346 Sent end-of-transfer signal.           
+
+Starting run 7 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346 Sent end-of-transfer signal.           
+
+Starting run 8 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346 Sent end-of-transfer signal.           
+
+Starting run 9 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346 Sent end-of-transfer signal.           
+
+Starting run 10 of 10
+|==================================================| 100% (52428800/52428800 bytes) CRC32: 0xcbf0d346 Sent end-of-transfer signal.           
+
+Average transfer time for 10 runs: 6527 ms
+File size: 524288000 bytes
+Average throughput: 80326030 b/s
+
+Enter file name to upload: file100MB.dat
+
+Starting run 1 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Sent end-of-transfer signal.         
+
+Starting run 2 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Sent end-of-transfer signal.         
+
+Starting run 3 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Sent end-of-transfer signal.         
+
+Starting run 4 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Sent end-of-transfer signal.         
+
+Starting run 5 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Sent end-of-transfer signal.         
+
+Starting run 6 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Sent end-of-transfer signal.         
+
+Starting run 7 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Sent end-of-transfer signal.         
+
+Starting run 8 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Sent end-of-transfer signal.         
+
+Starting run 9 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Sent end-of-transfer signal.         
+
+Starting run 10 of 10
+|==================================================| 100% (104857600/104857600 bytes) CRC32: 0x1761d6e2 Sent end-of-transfer signal.         
+
+Average transfer time for 10 runs: 12947 ms
+File size: 1048576000 bytes
+Average throughput: 80989881 b/s
