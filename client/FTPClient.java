@@ -41,6 +41,7 @@ private static final int TCP_BUFFER_SIZE = 4096;  // TCP buffer size
 private static final int UDP_BUFFER_SIZE = 1024;  // UDP buffer size
 private static final int MAX_RETRIES = 5;  // Maximum number of retries for UDP
 private static final int TIMEOUT = 2000;  // Timeout in milliseconds
+private static final int PORT = 21;  // Default port number
 
 public static void main(String[] args) throws IOException {
     System.out.println("Starting FTP Client...");
@@ -50,14 +51,14 @@ public static void main(String[] args) throws IOException {
     if (args.length == 2) {
         printAndLog("Connecting to " + args[0] + " on port " + args[1], true);
     } else if (args.length == 1) {
-        printAndLog("Attempting to connect to " + args[0] + " on default port (2121)", true);
+        printAndLog("Attempting to connect to " + args[0] + " on default port (" + PORT + ")", true);
     } else {
         printAndLog("Usage: java FTPClient <hostname> <port number>", true);
         System.exit(1);
     }
 
     String hostName = args[0];
-    final int portNumber = args.length == 2 ? Integer.parseInt(args[1]) : 2121;
+    final int portNumber = args.length == 2 ? Integer.parseInt(args[1]) : PORT;
 
     try (
         Socket ftpSocket = new Socket(hostName, portNumber);
@@ -206,10 +207,11 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
                 byte[] buffer = new byte[Long.BYTES + UDP_BUFFER_SIZE + Integer.BYTES]; // sequence + data + CRC
                 long expectedSequence = 0;
                 long currentBytes = 0;
-                long totalBytesTransferredRun = 0;    // Initialize totalBytesTransferred for this run
+                long totalBytesTransferredRun = 0;  // Initialize totalBytesTransferred for this run
                 int bytesRead;  // Declare bytesRead here
 
                 // **Send CLIENT_READY message with client's UDP port**
+                // Format: CLIENT_READY <port>
                 out.println("CLIENT_READY " + datagramSocket.getLocalPort());
                 out.flush();
 
@@ -228,13 +230,13 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
 
                     if (receivedSeq == -1L) {
                         // End-of-file signal received
-                        System.out.print("\tReceived end-of-file signal.               ");
+                        System.out.print("\tReceived end-of-file signal.");
                         break;
                     }
 
                     int dataLength = packet.getLength() - Long.BYTES - Integer.BYTES;
                     if (dataLength <= 0) {
-                        printAndLog("\tInvalid packet size detected. Aborting.", false);
+                        printAndLog("\tInvalid packet size detected. Aborting.", true);
                         break;
                     }
 
@@ -246,7 +248,7 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
                     crc.update(data, 0, dataLength);
                     long calculatedChecksum = crc.getValue() & 0xFFFFFFFFL; // Mask to 32 bits
                     if (calculatedChecksum != (receivedChecksum & 0xFFFFFFFFL)) {
-                        printAndLog("CRC32 mismatch detected. Transfer failed.", false);
+                        printAndLog("CRC32 mismatch detected. Transfer failed.", true);
                         fos.close();
                         datagramSocket.close();
                         return;
@@ -257,6 +259,7 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
                     totalBytesTransferred = currentBytes;
 
                     // Send ACK back to server
+                    // Format: [sequence number (8 bytes)]
                     ByteBuffer ackBuffer = ByteBuffer.allocate(Long.BYTES);
                     ackBuffer.order(ByteOrder.BIG_ENDIAN);
                     ackBuffer.putLong(receivedSeq);

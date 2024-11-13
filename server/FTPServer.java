@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 * It uses a single persistent connection and ensures clean file transfers with proper stream management.
 */
 public class FTPServer {
-    private static int listenPort = 2121;
+    private static int listenPort = 21;
     private static boolean running = true; // Server running flag
     private static ServerSocket serverSocket; // Class-level ServerSocket for handling shutdown
     static final Logger LOGGER = Logger.getLogger("FTPServer");
@@ -51,7 +51,7 @@ public class FTPServer {
         if (args.length > 0) {
             listenPort = Integer.parseInt(args[0]);
         } else {
-            printAndLog("Attempting to listen on default port (2121)");
+            printAndLog("Attempting to listen on default port (" + listenPort + ")");
         }
 
         // Start the server shutdown listener (listens for "q" to quit)
@@ -295,6 +295,7 @@ public class FTPServer {
                                 int checksum = (int) crc.getValue(); // Use int for CRC32
 
                                 // Create a packet with sequence number, data, and CRC32
+                                // Format: [sequence number (8 bytes)][data (MTU)][CRC32 checksum (4 bytes)]
                                 ByteBuffer byteBuffer = ByteBuffer.allocate(Long.BYTES + bytesRead + Integer.BYTES);
                                 byteBuffer.order(ByteOrder.BIG_ENDIAN); // Ensure consistent byte order
                                 byteBuffer.putLong(sequenceNumber);     // Sequence number
@@ -385,7 +386,7 @@ private void handlePUT(String[] command, PrintWriter out, BufferedReader in) thr
 
         // Attempt to lock the file
         try (RandomAccessFile raf = new RandomAccessFile(file, "rw");
-             FileChannel channel = raf.getChannel()) {
+            FileChannel channel = raf.getChannel()) {
             java.nio.channels.FileLock fileLock = channel.tryLock();
             if (fileLock == null) {
                 out.println("ERROR: File is currently in use.");
@@ -408,7 +409,6 @@ private void handlePUT(String[] command, PrintWriter out, BufferedReader in) thr
                         while ((bytesRead = bis.read(buffer)) != -1) {
                             fos.write(buffer, 0, bytesRead);
                             currentBytes += bytesRead;
-                            // Optionally, display progress here
                         }
                         fos.flush();
                     }
@@ -423,6 +423,8 @@ private void handlePUT(String[] command, PrintWriter out, BufferedReader in) thr
                 out.flush();
 
                 // Read CLIENT_READY using the existing BufferedReader
+                // Format: CLIENT_READY [client port]
+                // Example: CLIENT_READY 12345
                 String clientResponse = in.readLine();
                 if (clientResponse != null && clientResponse.startsWith("CLIENT_READY")) {
                     String[] responseParts = clientResponse.split(" ");
@@ -546,6 +548,8 @@ private void handlePUT(String[] command, PrintWriter out, BufferedReader in) thr
          * @throws IOException If an I/O error occurs while sending the ACK.
          */
         private void sendACK(DatagramSocket socket, InetAddress clientAddress, int clientPort, long sequenceNumber) throws IOException {
+            // ACK Packet
+            // Format: [sequence number]
             ByteBuffer ackBuffer = ByteBuffer.allocate(Long.BYTES);
             ackBuffer.order(ByteOrder.BIG_ENDIAN);
             ackBuffer.putLong(sequenceNumber);
