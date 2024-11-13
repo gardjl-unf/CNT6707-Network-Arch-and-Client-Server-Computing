@@ -18,14 +18,15 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.util.Scanner;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.Arrays;
 import java.util.zip.CRC32;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
-import java.io.IOException;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
@@ -362,162 +363,177 @@ public class FTPServer {
         }
     
         /**
-         * Handles the PUT command for file upload.
-         * @param command The command array containing the file to upload.
-         * @param out The output writer to communicate with the client.
-         * @param in The existing BufferedReader to read client messages.
-         * @throws IOException If an I/O error occurs while receiving the file.
-         */
-        private void handlePUT(String[] command, PrintWriter out, BufferedReader in) throws IOException {
-            if (command.length > 2) {
-                long fileSize;
-                try {
-                    fileSize = Long.parseLong(command[2]);  // Get file size from the client
-                } catch (NumberFormatException e) {
-                    out.println("ERROR: Invalid file size.");
-                    out.flush();
-                    return;
-                }
+ * Handles the PUT command for file upload.
+ * @param command The command array containing the file to upload.
+ * @param out The output writer to communicate with the client.
+ * @param in The existing BufferedReader to read client messages.
+ * @throws IOException If an I/O error occurs while receiving the file.
+ */
+private void handlePUT(String[] command, PrintWriter out, BufferedReader in) throws IOException {
+    if (command.length > 2) {
+        long fileSize;
+        try {
+            fileSize = Long.parseLong(command[2]);  // Get file size from the client
+        } catch (NumberFormatException e) {
+            out.println("ERROR: Invalid file size.");
+            out.flush();
+            return;
+        }
 
-                File file = new File(currentDir, command[1]);
+        File file = new File(currentDir, command[1]);
+        ReentrantLock lock = new ReentrantLock();
 
-                if (!udpMode) {
-                    // TCP mode
-                    try (ServerSocket transferSocket = new ServerSocket(0)) {
-                        out.println("READY " + transferSocket.getLocalPort() + " " + fileSize);  // Send file size
-                        out.flush();
+        // Attempt to lock the file
+        try (RandomAccessFile raf = new RandomAccessFile(file, "rw");
+             FileChannel channel = raf.getChannel()) {
+            java.nio.channels.FileLock fileLock = channel.tryLock();
+            if (fileLock == null) {
+                out.println("ERROR: File is currently in use.");
+                out.flush();
+                return;
+            }
 
-                        try (Socket fileTransferSocket = transferSocket.accept();
-                            BufferedInputStream bis = new BufferedInputStream(fileTransferSocket.getInputStream());
-                            FileOutputStream fos = new FileOutputStream(file)) {
-                            byte[] buffer = new byte[TCP_BUFFER_SIZE];
-                            int bytesRead;
-                            long currentBytes = 0;
-                            while ((bytesRead = bis.read(buffer)) != -1) {
-                                fos.write(buffer, 0, bytesRead);
-                                currentBytes += bytesRead;
-                                // Optionally, display progress here
-                            }
-                            fos.flush();
-                        }
-                    }
-                } else {
-                    // UDP mode with Sequence Numbers and ACKs
-                    DatagramSocket datagramSocket = new DatagramSocket();
-                    datagramSocket.setSoTimeout(TIMEOUT); // Set timeout for receiving packets
-
-                    // Notify the client that the server is ready for UDP transfer
-                    out.println("READY " + datagramSocket.getLocalPort() + " " + fileSize);
+            if (!udpMode) {
+                // TCP mode
+                try (ServerSocket transferSocket = new ServerSocket(0);
+                     FileOutputStream fos = new FileOutputStream(raf.getFD())) {
+                    out.println("READY " + transferSocket.getLocalPort() + " " + fileSize);  // Send file size
                     out.flush();
 
-                    // Read CLIENT_READY using the existing BufferedReader
-                    String clientResponse = in.readLine();
-                    if (clientResponse != null && clientResponse.startsWith("CLIENT_READY")) {
-                        String[] responseParts = clientResponse.split(" ");
-                        if (responseParts.length < 2) {
-                            out.println("ERROR: Invalid CLIENT_READY message.");
-                            out.flush();
-                            datagramSocket.close();
-                            return;
+                    try (Socket fileTransferSocket = transferSocket.accept();
+                         BufferedInputStream bis = new BufferedInputStream(fileTransferSocket.getInputStream())) {
+                        byte[] buffer = new byte[TCP_BUFFER_SIZE];
+                        int bytesRead;
+                        long currentBytes = 0;
+                        while ((bytesRead = bis.read(buffer)) != -1) {
+                            fos.write(buffer, 0, bytesRead);
+                            currentBytes += bytesRead;
+                            // Optionally, display progress here
                         }
-
-                        int clientPort;
-                        try {
-                            clientPort = Integer.parseInt(responseParts[1]);  // Get client's port
-                        } catch (NumberFormatException e) {
-                            out.println("ERROR: Invalid client port.");
-                            out.flush();
-                            datagramSocket.close();
-                            return;
-                        }
-
-                        InetAddress clientAddress = clientSocket.getInetAddress(); // Client IP
-
-                        // Start receiving file data
-                        try (FileOutputStream fos = new FileOutputStream(file)) {
-                            CRC32 crc = new CRC32();
-                            byte[] buffer = new byte[Long.BYTES + UDP_BUFFER_SIZE + Integer.BYTES];
-                            long expectedSequence = 0;
-                            boolean transferActive = true;
-
-                            while (transferActive) {
-                                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                                try {
-                                    datagramSocket.receive(packet);
-                                } catch (SocketTimeoutException e) {
-                                    // Timeout waiting for packets; assume transfer is complete
-                                    break;
-                                }
-
-                                int packetLength = packet.getLength();
-                                if (packetLength < Long.BYTES) {
-                                    // Packet too small to contain sequence number
-                                    continue;
-                                }
-
-                                ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData(), 0, packetLength);
-                                byteBuffer.order(ByteOrder.BIG_ENDIAN);
-                                long receivedSeq = byteBuffer.getLong();
-
-                                if (receivedSeq == -1L) {
-                                    // End-of-file signal received
-                                    transferActive = false;
-                                    break;
-                                }
-
-                                int dataLength = packetLength - Long.BYTES - Integer.BYTES;
-                                if (dataLength < 0) {
-                                    // Invalid packet size
-                                    continue;
-                                }
-
-                                byte[] data = new byte[dataLength];
-                                byteBuffer.get(data); // Extract data
-                                int receivedChecksum = byteBuffer.getInt(); // Extract CRC32 checksum
-
-                                // Validate CRC32
-                                crc.update(data, 0, dataLength);
-                                long calculatedChecksum = crc.getValue() & 0xFFFFFFFFL;
-                                if (calculatedChecksum != (receivedChecksum & 0xFFFFFFFFL)) {
-                                    // CRC mismatch; request retransmission by not sending ACK
-                                    continue;
-                                }
-
-                                // Check for correct sequence number
-                                if (receivedSeq != expectedSequence) {
-                                    // Unexpected sequence number; resend ACK for last correct sequence
-                                    sendACK(datagramSocket, clientAddress, clientPort, expectedSequence - 1);
-                                    continue;
-                                }
-
-                                // Write data to file
-                                fos.write(data, 0, dataLength);
-                                expectedSequence++;
-
-                                // Send ACK for the received sequence number
-                                sendACK(datagramSocket, clientAddress, clientPort, receivedSeq);
-
-                                // Reset CRC for next packet
-                                crc.reset();
-                            }
-                        } catch (IOException e) {
-                            printAndLog("Error receiving file: " + e.getMessage());
-                        } finally {
-                            datagramSocket.close();
-                        }
-
-                        printAndLog("File upload completed successfully from: " + clientAddress);
-                    } else {
-                        out.println("ERROR: Expected CLIENT_READY message.");
-                        out.flush();
-                        datagramSocket.close();
+                        fos.flush();
                     }
                 }
             } else {
-                out.println("ERROR: No file specified for PUT command.");
+                // UDP mode with Sequence Numbers and ACKs
+                DatagramSocket datagramSocket = new DatagramSocket();
+                datagramSocket.setSoTimeout(TIMEOUT); // Set timeout for receiving packets
+
+                // Notify the client that the server is ready for UDP transfer
+                out.println("READY " + datagramSocket.getLocalPort() + " " + fileSize);
                 out.flush();
+
+                // Read CLIENT_READY using the existing BufferedReader
+                String clientResponse = in.readLine();
+                if (clientResponse != null && clientResponse.startsWith("CLIENT_READY")) {
+                    String[] responseParts = clientResponse.split(" ");
+                    if (responseParts.length < 2) {
+                        out.println("ERROR: Invalid CLIENT_READY message.");
+                        out.flush();
+                        datagramSocket.close();
+                        return;
+                    }
+
+                    int clientPort;
+                    try {
+                        clientPort = Integer.parseInt(responseParts[1]);  // Get client's port
+                    } catch (NumberFormatException e) {
+                        out.println("ERROR: Invalid client port.");
+                        out.flush();
+                        datagramSocket.close();
+                        return;
+                    }
+
+                    InetAddress clientAddress = clientSocket.getInetAddress(); // Client IP
+
+                    // Start receiving file data
+                    try (FileOutputStream fosUDP = new FileOutputStream(raf.getFD())) {
+                        CRC32 crc = new CRC32();
+                        byte[] buffer = new byte[Long.BYTES + UDP_BUFFER_SIZE + Integer.BYTES];
+                        long expectedSequence = 0;
+                        boolean transferActive = true;
+
+                        while (transferActive) {
+                            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                            try {
+                                datagramSocket.receive(packet);
+                            } catch (SocketTimeoutException e) {
+                                // Timeout waiting for packets; assume transfer is complete
+                                break;
+                            }
+
+                            int packetLength = packet.getLength();
+                            if (packetLength < Long.BYTES) {
+                                // Packet too small to contain sequence number
+                                continue;
+                            }
+
+                            ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData(), 0, packetLength);
+                            byteBuffer.order(ByteOrder.BIG_ENDIAN);
+                            long receivedSeq = byteBuffer.getLong();
+
+                            if (receivedSeq == -1L) {
+                                // End-of-file signal received
+                                transferActive = false;
+                                break;
+                            }
+
+                            int dataLength = packetLength - Long.BYTES - Integer.BYTES;
+                            if (dataLength < 0) {
+                                // Invalid packet size
+                                continue;
+                            }
+
+                            byte[] data = new byte[dataLength];
+                            byteBuffer.get(data); // Extract data
+                            int receivedChecksum = byteBuffer.getInt(); // Extract CRC32 checksum
+
+                            // Validate CRC32
+                            crc.update(data, 0, dataLength);
+                            long calculatedChecksum = crc.getValue() & 0xFFFFFFFFL;
+                            if (calculatedChecksum != (receivedChecksum & 0xFFFFFFFFL)) {
+                                // CRC mismatch; request retransmission by not sending ACK
+                                continue;
+                            }
+
+                            // Check for correct sequence number
+                            if (receivedSeq != expectedSequence) {
+                                // Unexpected sequence number; resend ACK for last correct sequence
+                                sendACK(datagramSocket, clientAddress, clientPort, expectedSequence - 1);
+                                continue;
+                            }
+
+                            // Write data to file
+                            fosUDP.write(data, 0, dataLength);
+                            expectedSequence++;
+
+                            // Send ACK for the received sequence number
+                            sendACK(datagramSocket, clientAddress, clientPort, receivedSeq);
+
+                            // Reset CRC for next packet
+                            crc.reset();
+                        }
+                    } catch (IOException e) {
+                        printAndLog("Error receiving file: " + e.getMessage());
+                    } finally {
+                        datagramSocket.close();
+                    }
+
+                    printAndLog("File upload completed successfully from: " + clientAddress);
+                } else {
+                    out.println("ERROR: Expected CLIENT_READY message.");
+                    out.flush();
+                    datagramSocket.close();
+                }
             }
+        } catch (IOException e) {
+            out.println("ERROR: Could not lock file for writing: " + e.getMessage());
+            out.flush();
         }
+    } else {
+        out.println("ERROR: No file specified for PUT command.");
+        out.flush();
+    }
+}
 
 
 
