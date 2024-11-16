@@ -18,7 +18,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
-import java.io.IOException;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
@@ -37,16 +36,24 @@ static final Logger LOGGER = Logger.getLogger("FTPClient"); // Logger for loggin
 static final int NUM_TESTS = 10;  // Number of tests for testing mode
 static boolean testingMode = false;  // Default to testing mode off
 static boolean udpMode = false;  // Default to TCP mode
-private static final int TCP_BUFFER_SIZE = 4096;  // TCP buffer size
-private static final int UDP_BUFFER_SIZE = 1024;  // UDP buffer size
+private static final int TCP_BUFFER_SIZE = 1460; // 1500 - 40 (IP + TCP headers)
+private static final int UDP_OVERHEAD = Long.BYTES + Integer.BYTES; // 8 bytes for sequence + 4 bytes for CRC
+private static final int MAX_UDP_PAYLOAD = 1500 - (20 + 8 + UDP_OVERHEAD); // IP + UDP + Application overhead
+private static final int UDP_BUFFER_SIZE = MAX_UDP_PAYLOAD; // Final payload size
 private static final int MAX_RETRIES = 5;  // Maximum number of retries for UDP
 private static final int TIMEOUT = 2000;  // Timeout in milliseconds
 private static final int PORT = 21;  // Default port number
+private static String serverIP;  // Server IP address
+private static int serverPort;  // Server port number
 
 public static void main(String[] args) throws IOException {
-    System.out.println("Starting FTP Client...");
     LogToFile.logToFile(LOGGER, "FTPClient.log"); // Log to file
     printAndLog("Logging to FTPClient.log", true);
+
+    System.out.println("Starting FTP Client...");
+
+    String javaVersion = System.getProperty("java.version");
+    printAndLog("Java version: " + javaVersion, true);
 
     if (args.length == 2) {
         printAndLog("Connecting to " + args[0] + " on port " + args[1], true);
@@ -57,26 +64,26 @@ public static void main(String[] args) throws IOException {
         System.exit(1);
     }
 
-    String hostName = args[0];
-    final int portNumber = args.length == 2 ? Integer.parseInt(args[1]) : PORT;
+    serverIP = args[0];
+    serverPort = args.length == 2 ? Integer.parseInt(args[1]) : PORT;
 
     try (
-        Socket ftpSocket = new Socket(hostName, portNumber);
+        Socket ftpSocket = new Socket(serverIP, serverPort);
         PrintWriter out = new PrintWriter(ftpSocket.getOutputStream(), true);
         BufferedReader in = new BufferedReader(new InputStreamReader(ftpSocket.getInputStream()));
         BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in))
     ) {
-        printAndLog("Connection successful to " + hostName + ":" + portNumber, true);
+        printAndLog("Connection successful to " + serverIP + ":" + serverPort, true);
 
         menu(out, in, stdIn);
 
     } catch (UnknownHostException e) {
         // If the host is not found, log the error and exit
-        printAndLog("Unknown host: " + hostName, false);
+        printAndLog("Unknown host: " + serverIP, false);
         System.exit(1);
     } catch (IOException e) {
         // If an I/O error occurs, log the error and exit
-        printAndLog("Couldn't get I/O for the connection to " + hostName + ":" + portNumber, true);
+        printAndLog("Couldn't get I/O for the connection to " + serverIP + ":" + serverPort, true);
         LOGGER.severe(e.getMessage());
         e.printStackTrace();
         System.exit(1);
@@ -159,123 +166,111 @@ private static void menu(PrintWriter out, BufferedReader in, BufferedReader stdI
  */
 private static void receiveFile(String fileName, PrintWriter out, BufferedReader in) throws IOException {
     long totalDuration = 0;  // Accumulate transfer times
-    long totalBytesTransferred = 0;  // To accumulate bytes transferred
+    long totalBytesTransferred = 0;  // Accumulate bytes transferred
     int numRuns = testingMode ? NUM_TESTS : 1;
 
     for (int i = 0; i < numRuns; i++) {
-        if (numRuns > 0 && testingMode) {
-            if (i > 0) {
-                System.out.println("");
-            }
+        if (i > 0) {
+            // If we're in testing mode, display a separator between runs
+            System.out.println("\n--------------------------------------------------");
+        }
+        if (testingMode) {
             System.out.println("Starting run " + (i + 1) + " of " + numRuns + " for " + fileName + " transfer.");
         }
+
         long startTime = System.currentTimeMillis();  // Start time for each run
         out.println("GET " + fileName);  // Send GET command to the server
         out.flush();
         String serverResponse = in.readLine();
+
         if (serverResponse != null && serverResponse.startsWith("READY")) {
             String[] readyResponse = serverResponse.split(" ");
             int port = Integer.parseInt(readyResponse[1]); // Server's transfer port
-            long totalBytes = Long.parseLong(readyResponse[2]);  // File size received
+            long fileSize = Long.parseLong(readyResponse[2]);  // File size from server
 
             if (!udpMode) {
                 // TCP mode
-                try (Socket transferSocket = new Socket("localhost", port);
-                    BufferedInputStream bis = new BufferedInputStream(transferSocket.getInputStream());
-                    FileOutputStream fos = new FileOutputStream(fileName)) {
+                try (Socket transferSocket = new Socket(serverIP, port);
+                     BufferedInputStream bis = new BufferedInputStream(transferSocket.getInputStream());
+                     FileOutputStream fos = new FileOutputStream(fileName)) {
                     byte[] buffer = new byte[TCP_BUFFER_SIZE];
-                    int bytesRead;  // Declare bytesRead here
-                    int currentBytes = 0;
+                    int bytesRead;
+                    long currentBytes = 0;
+
                     while ((bytesRead = bis.read(buffer)) != -1) {
                         fos.write(buffer, 0, bytesRead);
                         currentBytes += bytesRead;
-                        totalBytesTransferred = currentBytes;
 
-                        // Display transfer progress
-                        transferDisplay((int) totalBytes, currentBytes, 0);  // No CRC for TCP
+                        // Display progress for the current run
+                        transferDisplay((int) fileSize, (int) currentBytes, 0);
                     }
+
                     fos.flush();
+                    totalBytesTransferred += (bytesRead + 40); // bytesRead + TCP Header + IP Header
                 }
             } else {
-                // UDP mode with Sequence Numbers and ACKs
-                DatagramSocket datagramSocket = new DatagramSocket();
-                datagramSocket.setSoTimeout(TIMEOUT); // Set timeout for receiving ACKs
-                InetAddress serverAddress = InetAddress.getByName("localhost"); // Server's address
-                CRC32 crc = new CRC32();
+                // UDP mode
+                try (DatagramSocket datagramSocket = new DatagramSocket();
+                     FileOutputStream fos = new FileOutputStream(fileName)) {
+                    datagramSocket.setSoTimeout(TIMEOUT); // Set timeout for receiving packets
+                    InetAddress serverAddress = InetAddress.getByName(serverIP);
 
-                FileOutputStream fos = new FileOutputStream(fileName);
-                byte[] buffer = new byte[Long.BYTES + UDP_BUFFER_SIZE + Integer.BYTES]; // sequence + data + CRC
-                long expectedSequence = 0;
-                long currentBytes = 0;
-                long totalBytesTransferredRun = 0;  // Initialize totalBytesTransferred for this run
-                int bytesRead;  // Declare bytesRead here
+                    out.println("CLIENT_READY " + datagramSocket.getLocalPort());
+                    out.flush();
 
-                // **Send CLIENT_READY message with client's UDP port**
-                // Format: CLIENT_READY <port>
-                out.println("CLIENT_READY " + datagramSocket.getLocalPort());
-                out.flush();
+                    byte[] buffer = new byte[Long.BYTES + UDP_BUFFER_SIZE + Integer.BYTES];
+                    long expectedSequence = 0;
+                    long currentBytes = 0;
 
-                while (true) {
-                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                    try {
-                        datagramSocket.receive(packet); // Receive packet from server
-                    } catch (SocketTimeoutException e) {
-                        printAndLog("Timeout waiting for packets. No more packets received.", false);
-                        break;
+                    while (true) {
+                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                        try {
+                            datagramSocket.receive(packet);
+                        } catch (SocketTimeoutException e) {
+                            printAndLog("Timeout waiting for packets. No more packets received.", false);
+                            break;
+                        }
+
+                        ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData(), 0, packet.getLength());
+                        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+                        long receivedSeq = byteBuffer.getLong();
+
+                        if (receivedSeq == -1L) { // End-of-file signal
+                            break;
+                        }
+
+                        int bytesRead = packet.getLength() - Long.BYTES - Integer.BYTES;
+                        if (bytesRead <= 0) {
+                            printAndLog("Invalid packet size. Aborting transfer.", true);
+                            break;
+                        }
+
+                        byte[] data = new byte[bytesRead];
+                        byteBuffer.get(data);
+                        int receivedChecksum = byteBuffer.getInt();
+
+                        CRC32 crc = new CRC32();
+                        crc.update(data, 0, bytesRead);
+                        long calculatedChecksum = crc.getValue() & 0xFFFFFFFFL;
+
+                        if (calculatedChecksum != (receivedChecksum & 0xFFFFFFFFL)) {
+                            printAndLog("CRC32 mismatch detected. Ignoring packet.", false);
+                            continue;
+                        }
+
+                        fos.write(data, 0, bytesRead);
+                        currentBytes += bytesRead;
+                        totalBytesTransferred += (bytesRead + 28 + UDP_OVERHEAD); // Total UDP packet size
+
+                        transferDisplay((int) fileSize, (int) currentBytes, (int) calculatedChecksum);
+
+                        ByteBuffer ackBuffer = ByteBuffer.allocate(Long.BYTES);
+                        ackBuffer.order(ByteOrder.BIG_ENDIAN);
+                        ackBuffer.putLong(receivedSeq);
+                        DatagramPacket ackPacket = new DatagramPacket(ackBuffer.array(), ackBuffer.capacity(), serverAddress, port);
+                        datagramSocket.send(ackPacket);
                     }
-
-                    ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData(), 0, packet.getLength());
-                    byteBuffer.order(ByteOrder.BIG_ENDIAN);
-                    long receivedSeq = byteBuffer.getLong();
-
-                    if (receivedSeq == -1L) {
-                        // End-of-file signal received
-                        System.out.print("\tReceived end-of-file signal.");
-                        break;
-                    }
-
-                    int dataLength = packet.getLength() - Long.BYTES - Integer.BYTES;
-                    if (dataLength <= 0) {
-                        printAndLog("\tInvalid packet size detected. Aborting.", true);
-                        break;
-                    }
-
-                    byte[] data = new byte[dataLength];
-                    byteBuffer.get(data); // Extract data
-                    int receivedChecksum = byteBuffer.getInt(); // Extract CRC32 checksum
-
-                    // Validate CRC32
-                    crc.update(data, 0, dataLength);
-                    long calculatedChecksum = crc.getValue() & 0xFFFFFFFFL; // Mask to 32 bits
-                    if (calculatedChecksum != (receivedChecksum & 0xFFFFFFFFL)) {
-                        printAndLog("CRC32 mismatch detected. Transfer failed.", true);
-                        fos.close();
-                        datagramSocket.close();
-                        return;
-                    }
-
-                    fos.write(data, 0, dataLength); // Write to file
-                    currentBytes += dataLength;
-                    totalBytesTransferred = currentBytes;
-
-                    // Send ACK back to server
-                    // Format: [sequence number (8 bytes)]
-                    ByteBuffer ackBuffer = ByteBuffer.allocate(Long.BYTES);
-                    ackBuffer.order(ByteOrder.BIG_ENDIAN);
-                    ackBuffer.putLong(receivedSeq);
-                    DatagramPacket ackPacket = new DatagramPacket(ackBuffer.array(), ackBuffer.capacity(), serverAddress, port);
-                    datagramSocket.send(ackPacket);
-                    System.out.print("\tSequence number: " + receivedSeq);
-
-                    // Display transfer progress
-                    transferDisplay((int) totalBytes, (int) currentBytes, (int) calculatedChecksum);
-
-                    crc.reset(); // Reset CRC32 for next packet
                 }
-
-                fos.flush(); // Ensure all data is written to disk
-                fos.close(); // Close file
-                datagramSocket.close(); // Close socket
             }
         } else {
             printAndLog("Server error: " + serverResponse, true);
@@ -283,12 +278,14 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
         }
 
         long endTime = System.currentTimeMillis();
-        long runDuration = endTime - startTime;  // Time for this run
-        totalDuration += runDuration;  // Accumulate total time
+        totalDuration += (endTime - startTime);  // Accumulate total time for all runs
     }
-    // Use the helper method to log the transfer details (average for test mode, single for non-test mode)
+
+    // Log details
     logTransferDetails(numRuns, totalDuration, totalBytesTransferred, fileName, "GET");
 }
+
+
 
 /**
  * Handles the file sending for the PUT command.
@@ -299,16 +296,18 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
  */
 private static void sendFile(String fileName, PrintWriter out, BufferedReader in) throws IOException {
     long totalDuration = 0;  // Accumulate transfer times
-    long totalBytesTransferred = 0;  // To accumulate bytes transferred
+    long totalBytesTransferred = 0;  // Accumulate bytes transferred
     int numRuns = testingMode ? NUM_TESTS : 1;
 
     for (int i = 0; i < numRuns; i++) {
-        if (numRuns > 0 && testingMode) {
-            if (i > 0) {
-                System.out.println("");
-            }
+        if (i > 0) {
+            // If we're in testing mode, display a separator between runs
+            System.out.println("\n--------------------------------------------------");
+        }
+        if (testingMode) {
             System.out.println("Starting run " + (i + 1) + " of " + numRuns + " for " + fileName + " transfer.");
         }
+
         long startTime = System.currentTimeMillis();  // Start time for each run
         File file = new File(fileName);
         long fileSize = file.length();  // Get the actual file size
@@ -323,124 +322,109 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
 
             if (!udpMode) {
                 // TCP mode
-                try (Socket transferSocket = new Socket("localhost", port);
-                    BufferedOutputStream bos = new BufferedOutputStream(transferSocket.getOutputStream());
-                    FileInputStream fis = new FileInputStream(fileName)) {
+                try (Socket transferSocket = new Socket(serverIP, port);
+                     BufferedOutputStream bos = new BufferedOutputStream(transferSocket.getOutputStream());
+                     FileInputStream fis = new FileInputStream(fileName)) {
                     byte[] buffer = new byte[TCP_BUFFER_SIZE];
                     int bytesRead;
-                    int currentBytes = 0;
+                    long currentBytes = 0;
+
                     while ((bytesRead = fis.read(buffer)) != -1) {
                         bos.write(buffer, 0, bytesRead);
                         currentBytes += bytesRead;
-                        totalBytesTransferred = currentBytes;
 
-                        // Display transfer progress
-                        transferDisplay((int) fileSize, currentBytes, 0);  // No CRC for TCP
+                        // Display progress for the current run
+                        transferDisplay((int) fileSize, (int) currentBytes, 0);
                     }
+
                     bos.flush();
+                    totalBytesTransferred += (bytesRead + 40); // bytesRead + TCP Header + IP Header
                 }
             } else {
-                // UDP mode with Sequence Numbers and ACKs
-                DatagramSocket datagramSocket = new DatagramSocket(); // Bind to any available port
-                datagramSocket.setSoTimeout(TIMEOUT); // Set timeout for ACKs
-                InetAddress serverAddress = InetAddress.getByName("localhost"); // Server's address
-                CRC32 crc = new CRC32();
+                // UDP mode
+                try (DatagramSocket datagramSocket = new DatagramSocket();
+                     FileInputStream fis = new FileInputStream(fileName)) {
+                    datagramSocket.setSoTimeout(TIMEOUT);
+                    InetAddress serverAddress = InetAddress.getByName(serverIP);
 
-                FileInputStream fis = new FileInputStream(fileName);
-                byte[] buffer = new byte[UDP_BUFFER_SIZE];
-                long sequenceNumber = 0;
-                long currentBytes = 0;  // Initialize currentBytes
-                long totalBytesTransferredRun = 0;  // Initialize totalBytesTransferred for this run
-                int bytesRead;  // Declare bytesRead here
+                    out.println("CLIENT_READY " + datagramSocket.getLocalPort());
+                    out.flush();
 
-                // **Send CLIENT_READY message with client's UDP port**
-                // Format: CLIENT_READY <port>
-                out.println("CLIENT_READY " + datagramSocket.getLocalPort());
-                out.flush();
+                    byte[] buffer = new byte[UDP_BUFFER_SIZE];
+                    long sequenceNumber = 0;
+                    long currentBytes = 0;
 
-                while ((bytesRead = fis.read(buffer)) != -1) {
-                    crc.update(buffer, 0, bytesRead);
-                    int checksum = (int) crc.getValue(); // Cast to int
+                    while (true) {
+                        int bytesRead = fis.read(buffer);
+                        if (bytesRead == -1) break;
 
-                    // Create packet with sequence number, data, and CRC32
-                    // Format: [sequence number (8 bytes)][data (MTU size)][checksum (4 bytes)]
-                    ByteBuffer byteBuffer = ByteBuffer.allocate(Long.BYTES + bytesRead + Integer.BYTES);
-                    byteBuffer.order(ByteOrder.BIG_ENDIAN); // Ensure consistent byte order
-                    byteBuffer.putLong(sequenceNumber);     // Sequence number
-                    byteBuffer.put(buffer, 0, bytesRead);   // Data
-                    byteBuffer.putInt(checksum);            // CRC32 checksum
+                        CRC32 crc = new CRC32();
+                        crc.update(buffer, 0, bytesRead);
+                        int checksum = (int) crc.getValue();
 
-                    byte[] packetData = byteBuffer.array();
-                    DatagramPacket packet = new DatagramPacket(packetData, packetData.length, serverAddress, port);
+                        ByteBuffer packetBuffer = ByteBuffer.allocate(Long.BYTES + bytesRead + Integer.BYTES);
+                        packetBuffer.order(ByteOrder.BIG_ENDIAN);
+                        packetBuffer.putLong(sequenceNumber);
+                        packetBuffer.put(buffer, 0, bytesRead);
+                        packetBuffer.putInt(checksum);
 
-                    boolean ackReceived = false;
-                    int retries = 0;
-
-                    while (!ackReceived && retries < MAX_RETRIES) {
+                        DatagramPacket packet = new DatagramPacket(packetBuffer.array(), packetBuffer.position(), serverAddress, port);
                         datagramSocket.send(packet);
-                        try {
-                            // Prepare to receive ACK
-                            byte[] ackBuffer = new byte[Long.BYTES];
-                            DatagramPacket ackPacket = new DatagramPacket(ackBuffer, ackBuffer.length);
-                            datagramSocket.receive(ackPacket);
 
-                            ByteBuffer ackByteBuffer = ByteBuffer.wrap(ackPacket.getData());
-                            ackByteBuffer.order(ByteOrder.BIG_ENDIAN);
-                            long ackSequence = ackByteBuffer.getLong();
+                        boolean ackReceived = false;
+                        int retries = 0;
 
-                            if (ackSequence == sequenceNumber) {
-                                ackReceived = true; // Correct ACK received
-                                System.out.print("\tSequence number: " + ackSequence);
-                            }
-                        } catch (SocketTimeoutException e) {
-                            retries++;
-                            if (retries == 1) {
-                                System.out.print("\n"); // Move to new line for retries
-                            }
-                            printAndLog("Timeout waiting for ACK for sequence number: " + sequenceNumber + ". Retrying (" + retries + "/" + MAX_RETRIES + ").]", false);
-                            // Log resends only
-                            if (retries == MAX_RETRIES) {
-                                printAndLog("Max retries reached for sequence number: " + sequenceNumber + ". Aborting transfer.", false);
-                                fis.close();
-                                datagramSocket.close();
-                                return;
+                        while (!ackReceived && retries < MAX_RETRIES) {
+                            try {
+                                byte[] ackBuffer = new byte[Long.BYTES];
+                                DatagramPacket ackPacket = new DatagramPacket(ackBuffer, ackBuffer.length);
+                                datagramSocket.receive(ackPacket);
+
+                                ByteBuffer ackByteBuffer = ByteBuffer.wrap(ackPacket.getData());
+                                ackByteBuffer.order(ByteOrder.BIG_ENDIAN);
+                                long ackSequence = ackByteBuffer.getLong();
+
+                                if (ackSequence == sequenceNumber) {
+                                    ackReceived = true;
+                                }
+                            } catch (SocketTimeoutException e) {
+                                retries++;
+                                if (retries == MAX_RETRIES) {
+                                    printAndLog("Max retries reached for sequence " + sequenceNumber + ". Aborting.", true);
+                                    return;
+                                }
                             }
                         }
+
+                        sequenceNumber++;
+                        currentBytes += bytesRead;
+                        totalBytesTransferred += (bytesRead + 28 + UDP_OVERHEAD); // Total UDP packet size
+
+                        transferDisplay((int) fileSize, (int) currentBytes, checksum);
                     }
 
-                    sequenceNumber++;
-                    currentBytes += bytesRead;
-                    totalBytesTransferredRun += bytesRead;
-
-                    // Display transfer progress
-                    transferDisplay((int) fileSize, (int) currentBytes, checksum);
-
-                    crc.reset(); // Reset CRC for next packet
+                    // End-of-file signal
+                    ByteBuffer endBuffer = ByteBuffer.allocate(Long.BYTES);
+                    endBuffer.order(ByteOrder.BIG_ENDIAN);
+                    endBuffer.putLong(-1L);
+                    DatagramPacket endPacket = new DatagramPacket(endBuffer.array(), endBuffer.capacity(), serverAddress, port);
+                    datagramSocket.send(endPacket);
                 }
-
-                // Send end-of-transfer signal with sequence number -1
-                ByteBuffer endBuffer = ByteBuffer.allocate(Long.BYTES);
-                endBuffer.order(ByteOrder.BIG_ENDIAN);
-                endBuffer.putLong(-1L); // Special sequence number for EOF
-                DatagramPacket endPacket = new DatagramPacket(endBuffer.array(), endBuffer.capacity(), serverAddress, port);
-                datagramSocket.send(endPacket);
-                System.out.print(" Sent end-of-transfer signal.");
-
-                fis.close();
-                datagramSocket.close();
-
-                totalBytesTransferred += totalBytesTransferredRun; // Accumulate total bytes transferred
             }
         } else {
             printAndLog("Server error: " + serverResponse, true);
+            return;
         }
+
         long endTime = System.currentTimeMillis();
-        long runDuration = endTime - startTime;  // Time for this run
-        totalDuration += runDuration;  // Accumulate total time
+        totalDuration += (endTime - startTime);  // Accumulate total time for all runs
     }
-    // Use the helper method to log the transfer details (average for test mode, single for non-test mode)
+
+    // Log details
     logTransferDetails(numRuns, totalDuration, totalBytesTransferred, fileName, "PUT");
 }
+
+
 
 /**
  * Logs and prints the details of a file transfer, handling both single run and test mode.

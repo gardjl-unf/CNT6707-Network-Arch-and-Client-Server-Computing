@@ -39,14 +39,22 @@ public class FTPServer {
     private static boolean running = true; // Server running flag
     private static ServerSocket serverSocket; // Class-level ServerSocket for handling shutdown
     static final Logger LOGGER = Logger.getLogger("FTPServer");
-    private static final int TCP_BUFFER_SIZE = 4096; // TCP buffer size
-    private static final int UDP_BUFFER_SIZE = 1024; // UDP buffer size
+    private static final int TCP_BUFFER_SIZE = 1460; // 1500 - 40 (IP + TCP headers)
+    private static final int UDP_OVERHEAD = Long.BYTES + Integer.BYTES; // 8 bytes for sequence + 4 bytes for CRC
+private static final int MAX_UDP_PAYLOAD = 1500 - (20 + 8 + UDP_OVERHEAD); // IP + UDP + Application overhead
+private static final int UDP_BUFFER_SIZE = MAX_UDP_PAYLOAD; // Final payload size
     private static final int MAX_RETRIES = 5;
     private static final int TIMEOUT = 2000; // Timeout in milliseconds
 
 
     public static void main(String[] args) throws IOException {
         LogToFile.logToFile(LOGGER, "FTPServer.log"); // Log to file
+        printAndLog("Logging to FTPServer.log");
+
+        printAndLog("Starting FTP server...");
+
+        String javaVersion = System.getProperty("java.version");
+         printAndLog("Java version: " + javaVersion);
 
         if (args.length > 0) {
             listenPort = Integer.parseInt(args[0]);
@@ -58,8 +66,9 @@ public class FTPServer {
         new Thread(FTPServer::shutdownListener).start();
 
         try {
-            serverSocket = new ServerSocket(listenPort);  // Initialize class-level ServerSocket
-            printAndLog("Listening on port: " + listenPort);
+            serverSocket = new ServerSocket(listenPort, 50, InetAddress.getByName("0.0.0.0")); // Bind to all interfaces
+            printAndLog("Server listening on " + serverSocket.getInetAddress() + ":" + serverSocket.getLocalPort());
+
 
             // Main loop to accept client connections
             while (running) {
