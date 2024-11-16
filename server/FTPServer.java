@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.Scanner;
-import java.util.concurrent.locks.ReentrantLock;
+//import java.util.concurrent.locks.ReentrantLock;
 import java.util.Arrays;
 import java.util.zip.CRC32;
 import java.text.SimpleDateFormat;
@@ -41,8 +41,8 @@ public class FTPServer {
     static final Logger LOGGER = Logger.getLogger("FTPServer");
     private static final int TCP_BUFFER_SIZE = 1460; // 1500 - 40 (IP + TCP headers)
     private static final int UDP_OVERHEAD = Long.BYTES + Integer.BYTES; // 8 bytes for sequence + 4 bytes for CRC
-private static final int MAX_UDP_PAYLOAD = 1500 - (20 + 8 + UDP_OVERHEAD); // IP + UDP + Application overhead
-private static final int UDP_BUFFER_SIZE = MAX_UDP_PAYLOAD; // Final payload size
+    private static final int MAX_UDP_PAYLOAD = 1500 - (20 + 8 + UDP_OVERHEAD); // IP + UDP + Application overhead
+    private static final int UDP_BUFFER_SIZE = MAX_UDP_PAYLOAD; // Final payload size
     private static final int MAX_RETRIES = 5;
     private static final int TIMEOUT = 2000; // Timeout in milliseconds
 
@@ -391,7 +391,7 @@ private void handlePUT(String[] command, PrintWriter out, BufferedReader in) thr
         }
 
         File file = new File(currentDir, command[1]);
-        ReentrantLock lock = new ReentrantLock();
+        //ReentrantLock lock = new ReentrantLock();
 
         // Attempt to lock the file
         try (RandomAccessFile raf = new RandomAccessFile(file, "rw");

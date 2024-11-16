@@ -219,7 +219,7 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
                     out.flush();
 
                     byte[] buffer = new byte[Long.BYTES + UDP_BUFFER_SIZE + Integer.BYTES];
-                    long expectedSequence = 0;
+                    //long expectedSequence = 0;
                     long currentBytes = 0;
 
                     while (true) {
@@ -284,8 +284,6 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
     // Log details
     logTransferDetails(numRuns, totalDuration, totalBytesTransferred, fileName, "GET");
 }
-
-
 
 /**
  * Handles the file sending for the PUT command.
@@ -423,8 +421,6 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
     // Log details
     logTransferDetails(numRuns, totalDuration, totalBytesTransferred, fileName, "PUT");
 }
-
-
 
 /**
  * Logs and prints the details of a file transfer, handling both single run and test mode.
