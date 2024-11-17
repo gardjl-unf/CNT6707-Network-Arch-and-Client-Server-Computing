@@ -36,10 +36,16 @@ static final Logger LOGGER = Logger.getLogger("FTPClient"); // Logger for loggin
 static final int NUM_TESTS = 10;  // Number of tests for testing mode
 static boolean testingMode = false;  // Default to testing mode off
 static boolean udpMode = false;  // Default to TCP mode
-private static final int TCP_BUFFER_SIZE = 1460; // 1500 - 40 (IP + TCP headers)
-private static final int UDP_OVERHEAD = Long.BYTES + Integer.BYTES; // 8 bytes for sequence + 4 bytes for CRC
-private static final int MAX_UDP_PAYLOAD = 1500 - (20 + 8 + UDP_OVERHEAD); // IP + UDP + Application overhead
-private static final int UDP_BUFFER_SIZE = MAX_UDP_PAYLOAD; // Final payload size
+private static final int MTU = 1500;  // Maximum Transmission Unit (MTU) for Ethernet
+private static final int IP_OVERHEAD = 20; // 20 bytes for IP header
+private static final int TCP_OVERHEAD = 20; // 20 bytes for TCP header
+private static final int TCP_IP_OVERHEAD = IP_OVERHEAD + TCP_OVERHEAD; // Total TCP/IP overhead
+private static final int TCP_BUFFER_SIZE = MTU - TCP_IP_OVERHEAD; // Final payload size
+private static final int UDP_OVERHEAD = 8; // 8 bytes for UDP header
+private static final int APPLICATION_OVERHEAD = Long.BYTES + Integer.BYTES; // 8 bytes for sequence + 4 bytes for CRC
+private static final int UDP_IP_OVERHEAD = IP_OVERHEAD + UDP_OVERHEAD; // Total UDP/IP overhead
+private static final int UDP_IP_APPLICATION_OVERHEAD = UDP_IP_OVERHEAD + APPLICATION_OVERHEAD; // 8 bytes for sequence + 4 bytes for CRC
+private static final int UDP_BUFFER_SIZE = MTU - UDP_IP_APPLICATION_OVERHEAD; // Maximum UDP payload size
 private static final int MAX_RETRIES = 5;  // Maximum number of retries for UDP
 private static final int TIMEOUT = 2000;  // Timeout in milliseconds
 private static final int PORT = 21;  // Default port number
@@ -168,6 +174,7 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
     long totalDuration = 0;  // Accumulate transfer times
     long totalBytesTransferred = 0;  // Accumulate bytes transferred
     int numRuns = testingMode ? NUM_TESTS : 1;
+    long fileSize = 0;
 
     for (int i = 0; i < numRuns; i++) {
         if (i > 0) {
@@ -186,7 +193,7 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
         if (serverResponse != null && serverResponse.startsWith("READY")) {
             String[] readyResponse = serverResponse.split(" ");
             int port = Integer.parseInt(readyResponse[1]); // Server's transfer port
-            long fileSize = Long.parseLong(readyResponse[2]);  // File size from server
+            fileSize = Long.parseLong(readyResponse[2]);  // File size from server
 
             if (!udpMode) {
                 // TCP mode
@@ -200,13 +207,14 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
                     while ((bytesRead = bis.read(buffer)) != -1) {
                         fos.write(buffer, 0, bytesRead);
                         currentBytes += bytesRead;
+                        totalBytesTransferred += (bytesRead + 40); // bytesRead + TCP Header + IP Header
 
                         // Display progress for the current run
-                        transferDisplay((int) fileSize, (int) currentBytes, 0);
+                        transferDisplay((int) fileSize + TCP_IP_OVERHEAD * (int)Math.ceil((double) fileSize/TCP_BUFFER_SIZE), (int) totalBytesTransferred, 0);
                     }
 
                     fos.flush();
-                    totalBytesTransferred += (bytesRead + 40); // bytesRead + TCP Header + IP Header
+                    
                 }
             } else {
                 // UDP mode
@@ -260,9 +268,10 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
 
                         fos.write(data, 0, bytesRead);
                         currentBytes += bytesRead;
-                        totalBytesTransferred += (bytesRead + 28 + UDP_OVERHEAD); // Total UDP packet size
+                        totalBytesTransferred += (bytesRead + UDP_IP_APPLICATION_OVERHEAD); // Total UDP packet size
 
-                        transferDisplay((int) fileSize, (int) currentBytes, (int) calculatedChecksum);
+                        // Display progress for the current run
+                        transferDisplay((int) fileSize + UDP_IP_APPLICATION_OVERHEAD * (int)Math.ceil((double) fileSize/UDP_BUFFER_SIZE), (int) totalBytesTransferred, (int) calculatedChecksum);
 
                         ByteBuffer ackBuffer = ByteBuffer.allocate(Long.BYTES);
                         ackBuffer.order(ByteOrder.BIG_ENDIAN);
@@ -282,7 +291,7 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
     }
 
     // Log details
-    logTransferDetails(numRuns, totalDuration, totalBytesTransferred, fileName, "GET");
+    logTransferDetails(numRuns, fileSize, totalDuration, totalBytesTransferred, fileName, "GET");
 }
 
 /**
@@ -296,6 +305,7 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
     long totalDuration = 0;  // Accumulate transfer times
     long totalBytesTransferred = 0;  // Accumulate bytes transferred
     int numRuns = testingMode ? NUM_TESTS : 1;
+    long fileSize = 0;
 
     for (int i = 0; i < numRuns; i++) {
         if (i > 0) {
@@ -308,7 +318,7 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
 
         long startTime = System.currentTimeMillis();  // Start time for each run
         File file = new File(fileName);
-        long fileSize = file.length();  // Get the actual file size
+        fileSize = file.length();  // Get the actual file size
 
         out.println("PUT " + fileName + " " + fileSize);  // Send PUT command with file size
         out.flush();
@@ -331,12 +341,14 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
                         bos.write(buffer, 0, bytesRead);
                         currentBytes += bytesRead;
 
+                        totalBytesTransferred += (bytesRead + 40); // bytesRead + TCP Header + IP Header
+
                         // Display progress for the current run
-                        transferDisplay((int) fileSize, (int) currentBytes, 0);
+                        transferDisplay((int) fileSize + TCP_IP_OVERHEAD * (int)Math.ceil((double) fileSize/TCP_BUFFER_SIZE), (int) totalBytesTransferred, 0);
                     }
 
                     bos.flush();
-                    totalBytesTransferred += (bytesRead + 40); // bytesRead + TCP Header + IP Header
+                    
                 }
             } else {
                 // UDP mode
@@ -396,9 +408,10 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
 
                         sequenceNumber++;
                         currentBytes += bytesRead;
-                        totalBytesTransferred += (bytesRead + 28 + UDP_OVERHEAD); // Total UDP packet size
+                        totalBytesTransferred += (bytesRead + UDP_IP_APPLICATION_OVERHEAD); // Total UDP packet size
 
-                        transferDisplay((int) fileSize, (int) currentBytes, checksum);
+                        // Display progress for the current run
+                        transferDisplay((int) fileSize + UDP_IP_APPLICATION_OVERHEAD * (int)Math.ceil((double) fileSize/UDP_BUFFER_SIZE), (int) currentBytes, (int) checksum);
                     }
 
                     // End-of-file signal
@@ -419,8 +432,18 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
     }
 
     // Log details
-    logTransferDetails(numRuns, totalDuration, totalBytesTransferred, fileName, "PUT");
+    logTransferDetails(numRuns, fileSize, totalDuration, totalBytesTransferred, fileName, "PUT");
 }
+
+// ACK Handling function (added for troubleshooting)
+private static void sendACK(DatagramSocket socket, InetAddress address, int port, long sequenceNumber) throws IOException {
+    ByteBuffer ackBuffer = ByteBuffer.allocate(Long.BYTES);
+    ackBuffer.order(ByteOrder.BIG_ENDIAN);
+    ackBuffer.putLong(sequenceNumber);
+    DatagramPacket ackPacket = new DatagramPacket(ackBuffer.array(), ackBuffer.capacity(), address, port);
+    socket.send(ackPacket);
+}
+
 
 /**
  * Logs and prints the details of a file transfer, handling both single run and test mode.
@@ -430,14 +453,15 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
  * @param fileName The name of the file being transferred.
  * @param operation The operation type ("GET" or "PUT").
  */
-private static void logTransferDetails(int numRuns, long totalDuration, long totalBytesTransferred, String fileName, String operation) {
+private static void logTransferDetails(int numRuns, long filesize, long totalDuration, long totalBytesTransferred, String fileName, String operation) {
     if (numRuns > 1) {
         // Test mode: display average statistics
         long averageDuration = totalDuration / numRuns;
         double averageThroughput = totalBytesTransferred / (averageDuration / 1000.0);  // Throughput in b/s
         System.out.println("");  // New line for clarity
         printAndLog("Average transfer time for " + numRuns + " runs: " + averageDuration + " ms", true);
-        printAndLog("File size: " + totalBytesTransferred + " bytes", true);
+        printAndLog("File size: " + filesize + " bytes", true);
+        printAndLog("Total bytes transferred: " + totalBytesTransferred + " bytes", true);
         printAndLog("Average throughput: " + (long) averageThroughput + " b/s", true);
     } else {
         // Single run: display detailed stats
@@ -445,7 +469,8 @@ private static void logTransferDetails(int numRuns, long totalDuration, long tot
         double throughput = totalBytesTransferred / (duration / 1000.0);  // Throughput in b/s
         System.out.println("");  // New line for clarity
         printAndLog(operation + " of " + fileName + " completed in " + duration + " ms", true);
-        printAndLog("File size: " + totalBytesTransferred + " bytes", true);
+        printAndLog("File size: " + filesize + " bytes", true);
+        printAndLog("Total bytes transferred: " + totalBytesTransferred + " bytes", true);
         printAndLog("Throughput: " + (long) throughput + " b/s", true);
     }
 }

@@ -39,10 +39,16 @@ public class FTPServer {
     private static boolean running = true; // Server running flag
     private static ServerSocket serverSocket; // Class-level ServerSocket for handling shutdown
     static final Logger LOGGER = Logger.getLogger("FTPServer");
-    private static final int TCP_BUFFER_SIZE = 1460; // 1500 - 40 (IP + TCP headers)
-    private static final int UDP_OVERHEAD = Long.BYTES + Integer.BYTES; // 8 bytes for sequence + 4 bytes for CRC
-    private static final int MAX_UDP_PAYLOAD = 1500 - (20 + 8 + UDP_OVERHEAD); // IP + UDP + Application overhead
-    private static final int UDP_BUFFER_SIZE = MAX_UDP_PAYLOAD; // Final payload size
+    private static final int MTU = 1500;  // Maximum Transmission Unit (MTU) for Ethernet
+    private static final int IP_OVERHEAD = 20; // 20 bytes for IP header
+    private static final int TCP_OVERHEAD = 20; // 20 bytes for TCP header
+    private static final int TCP_IP_OVERHEAD = IP_OVERHEAD + TCP_OVERHEAD; // Total TCP/IP overhead
+    private static final int TCP_BUFFER_SIZE = MTU - TCP_IP_OVERHEAD; // Final payload size
+    private static final int UDP_OVERHEAD = 8; // 8 bytes for UDP header
+    private static final int APPLICATION_OVERHEAD = Long.BYTES + Integer.BYTES; // 8 bytes for sequence + 4 bytes for CRC
+    private static final int UDP_IP_OVERHEAD = IP_OVERHEAD + UDP_OVERHEAD; // Total UDP/IP overhead
+    private static final int UDP_IP_APPLICATION_OVERHEAD = UDP_IP_OVERHEAD + APPLICATION_OVERHEAD; // 8 bytes for sequence + 4 bytes for CRC
+    private static final int UDP_BUFFER_SIZE = MTU - UDP_IP_APPLICATION_OVERHEAD; // Final payload size
     private static final int MAX_RETRIES = 5;
     private static final int TIMEOUT = 2000; // Timeout in milliseconds
 
