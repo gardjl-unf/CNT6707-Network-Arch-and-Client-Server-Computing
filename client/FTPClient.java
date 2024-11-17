@@ -175,6 +175,7 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
     long totalBytesTransferred = 0;  // Accumulate bytes transferred
     int numRuns = testingMode ? NUM_TESTS : 1;
     long fileSize = 0;
+    long bytesPerFile = 0;
 
     for (int i = 0; i < numRuns; i++) {
         if (i > 0) {
@@ -198,11 +199,12 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
             if (!udpMode) {
                 // TCP mode
                 try (Socket transferSocket = new Socket(serverIP, port);
-                     BufferedInputStream bis = new BufferedInputStream(transferSocket.getInputStream());
-                     FileOutputStream fos = new FileOutputStream(fileName)) {
+                    BufferedInputStream bis = new BufferedInputStream(transferSocket.getInputStream());
+                    FileOutputStream fos = new FileOutputStream(fileName)) {
                     byte[] buffer = new byte[TCP_BUFFER_SIZE];
                     int bytesRead;
                     long currentBytes = 0;
+                    bytesPerFile = fileSize + TCP_IP_OVERHEAD * (int)Math.ceil((double) fileSize/TCP_BUFFER_SIZE);  // Total bytes to transfer
 
                     while ((bytesRead = bis.read(buffer)) != -1) {
                         fos.write(buffer, 0, bytesRead);
@@ -210,7 +212,7 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
                         totalBytesTransferred += (bytesRead + 40); // bytesRead + TCP Header + IP Header
 
                         // Display progress for the current run
-                        transferDisplay((int) fileSize + TCP_IP_OVERHEAD * (int)Math.ceil((double) fileSize/TCP_BUFFER_SIZE), (int) totalBytesTransferred, 0);
+                        transferDisplay((int) bytesPerFile, totalBytesTransferred - i * bytesPerFile, 0, 0);
                     }
 
                     fos.flush();
@@ -229,13 +231,14 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
                     byte[] buffer = new byte[Long.BYTES + UDP_BUFFER_SIZE + Integer.BYTES];
                     //long expectedSequence = 0;
                     long currentBytes = 0;
+                    bytesPerFile = fileSize + UDP_IP_APPLICATION_OVERHEAD * (int)Math.ceil((double) fileSize/UDP_BUFFER_SIZE);  // Total bytes to transfer
 
                     while (true) {
                         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                         try {
                             datagramSocket.receive(packet);
                         } catch (SocketTimeoutException e) {
-                            printAndLog("Timeout waiting for packets. No more packets received.", false);
+                            printAndLog(" Timeout waiting for packets. No more packets received.", false);
                             break;
                         }
 
@@ -271,7 +274,7 @@ private static void receiveFile(String fileName, PrintWriter out, BufferedReader
                         totalBytesTransferred += (bytesRead + UDP_IP_APPLICATION_OVERHEAD); // Total UDP packet size
 
                         // Display progress for the current run
-                        transferDisplay((int) fileSize + UDP_IP_APPLICATION_OVERHEAD * (int)Math.ceil((double) fileSize/UDP_BUFFER_SIZE), (int) totalBytesTransferred, (int) calculatedChecksum);
+                        transferDisplay((int) bytesPerFile, totalBytesTransferred - i * bytesPerFile, (int) calculatedChecksum, receivedSeq);
 
                         ByteBuffer ackBuffer = ByteBuffer.allocate(Long.BYTES);
                         ackBuffer.order(ByteOrder.BIG_ENDIAN);
@@ -306,6 +309,7 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
     long totalBytesTransferred = 0;  // Accumulate bytes transferred
     int numRuns = testingMode ? NUM_TESTS : 1;
     long fileSize = 0;
+    long bytesPerFile = 0;
 
     for (int i = 0; i < numRuns; i++) {
         if (i > 0) {
@@ -315,7 +319,6 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
         if (testingMode) {
             System.out.println("Starting run " + (i + 1) + " of " + numRuns + " for " + fileName + " transfer.");
         }
-
         long startTime = System.currentTimeMillis();  // Start time for each run
         File file = new File(fileName);
         fileSize = file.length();  // Get the actual file size
@@ -336,6 +339,7 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
                     byte[] buffer = new byte[TCP_BUFFER_SIZE];
                     int bytesRead;
                     long currentBytes = 0;
+                    bytesPerFile = fileSize + TCP_IP_OVERHEAD * (int)Math.ceil((double) fileSize/TCP_BUFFER_SIZE);  // Total bytes to transfer
 
                     while ((bytesRead = fis.read(buffer)) != -1) {
                         bos.write(buffer, 0, bytesRead);
@@ -344,7 +348,7 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
                         totalBytesTransferred += (bytesRead + 40); // bytesRead + TCP Header + IP Header
 
                         // Display progress for the current run
-                        transferDisplay((int) fileSize + TCP_IP_OVERHEAD * (int)Math.ceil((double) fileSize/TCP_BUFFER_SIZE), (int) totalBytesTransferred, 0);
+                        transferDisplay((int) bytesPerFile, totalBytesTransferred - i * bytesPerFile, 0, 0);
                     }
 
                     bos.flush();
@@ -363,6 +367,7 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
                     byte[] buffer = new byte[UDP_BUFFER_SIZE];
                     long sequenceNumber = 0;
                     long currentBytes = 0;
+                    bytesPerFile = fileSize + UDP_IP_APPLICATION_OVERHEAD * (int)Math.ceil((double) fileSize/UDP_BUFFER_SIZE);  // Total bytes to transfer
 
                     while (true) {
                         int bytesRead = fis.read(buffer);
@@ -411,7 +416,7 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
                         totalBytesTransferred += (bytesRead + UDP_IP_APPLICATION_OVERHEAD); // Total UDP packet size
 
                         // Display progress for the current run
-                        transferDisplay((int) fileSize + UDP_IP_APPLICATION_OVERHEAD * (int)Math.ceil((double) fileSize/UDP_BUFFER_SIZE), (int) currentBytes, (int) checksum);
+                        transferDisplay((int) bytesPerFile, totalBytesTransferred - i * bytesPerFile, (int) checksum, sequenceNumber);
                     }
 
                     // End-of-file signal
@@ -435,7 +440,7 @@ private static void sendFile(String fileName, PrintWriter out, BufferedReader in
     logTransferDetails(numRuns, fileSize, totalDuration, totalBytesTransferred, fileName, "PUT");
 }
 
-// ACK Handling function (added for troubleshooting)
+/* ACK
 private static void sendACK(DatagramSocket socket, InetAddress address, int port, long sequenceNumber) throws IOException {
     ByteBuffer ackBuffer = ByteBuffer.allocate(Long.BYTES);
     ackBuffer.order(ByteOrder.BIG_ENDIAN);
@@ -443,7 +448,7 @@ private static void sendACK(DatagramSocket socket, InetAddress address, int port
     DatagramPacket ackPacket = new DatagramPacket(ackBuffer.array(), ackBuffer.capacity(), address, port);
     socket.send(ackPacket);
 }
-
+*/
 
 /**
  * Logs and prints the details of a file transfer, handling both single run and test mode.
@@ -454,6 +459,8 @@ private static void sendACK(DatagramSocket socket, InetAddress address, int port
  * @param operation The operation type ("GET" or "PUT").
  */
 private static void logTransferDetails(int numRuns, long filesize, long totalDuration, long totalBytesTransferred, String fileName, String operation) {
+    printAndLog(" Transfer complete.", true);
+    printAndLog("Operation: " + operation, true);
     if (numRuns > 1) {
         // Test mode: display average statistics
         long averageDuration = totalDuration / numRuns;
@@ -481,7 +488,7 @@ private static void logTransferDetails(int numRuns, long filesize, long totalDur
  * @param currentBytes The number of bytes transferred so far.
  * @param crc The CRC32 checksum of the transferred data.
  */
-private static void transferDisplay(int totalBytes, int currentBytes, int crc) {
+private static void transferDisplay(int totalBytes, long currentBytes, int crc, long segment) {
     // Clear the line if we're about to hit 100% to ensure no residual characters are present
     if (currentBytes >= totalBytes) {
         System.out.print("\r" + " ".repeat(150) + "");
@@ -506,6 +513,10 @@ private static void transferDisplay(int totalBytes, int currentBytes, int crc) {
     // Only print CRC if it is non-zero
     if (crc != 0) {
         System.out.print(" CRC32: 0x" + Integer.toHexString(crc));
+    }
+
+    if (segment != 0) {
+        System.out.print(" Segment: " + segment);
     }
 
     // Flush the output to ensure it updates in real-time

@@ -52,7 +52,6 @@ public class FTPServer {
     private static final int MAX_RETRIES = 5;
     private static final int TIMEOUT = 2000; // Timeout in milliseconds
 
-
     public static void main(String[] args) throws IOException {
         LogToFile.logToFile(LOGGER, "FTPServer.log"); // Log to file
         printAndLog("Logging to FTPServer.log");
@@ -60,7 +59,7 @@ public class FTPServer {
         printAndLog("Starting FTP server...");
 
         String javaVersion = System.getProperty("java.version");
-         printAndLog("Java version: " + javaVersion);
+        printAndLog("Java version: " + javaVersion);
 
         if (args.length > 0) {
             listenPort = Integer.parseInt(args[0]);
@@ -74,6 +73,21 @@ public class FTPServer {
         try {
             serverSocket = new ServerSocket(listenPort, 50, InetAddress.getByName("0.0.0.0")); // Bind to all interfaces
             printAndLog("Server listening on " + serverSocket.getInetAddress() + ":" + serverSocket.getLocalPort());
+            try (final DatagramSocket datagramSocket = new DatagramSocket()) {
+                datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
+                printAndLog("Server WAN IP: " + datagramSocket.getLocalAddress().getHostAddress());
+                // Display server interface IP address
+                printAndLog("Server LAN IP: " + InetAddress.getLocalHost());
+            } catch (Exception e) {
+                printAndLog("Server WAN IP: Unable to Reach Google DNS: " + e.getMessage());
+            }
+            
+            printAndLog("Root directory: " + System.getProperty("user.dir"));
+            printAndLog("Maximum Transmission Unit (MTU): " + MTU + " bytes");
+            printAndLog("TCP buffer size: " + TCP_BUFFER_SIZE + " bytes");
+            printAndLog("UDP buffer size: " + UDP_BUFFER_SIZE + " bytes");
+            printAndLog("Server ready to accept client connections.");
+            printAndLog("Waiting for client connections...");
 
 
             // Main loop to accept client connections
@@ -129,12 +143,12 @@ public class FTPServer {
 
     /**
      * ClientHandler class to handle individual client connections in separate threads.
-     * Each client connection is handled by a separate instance of this class.
-     * The class implements the Runnable interface to run in a separate thread.
-     * The class handles the LS, CD, GET, PUT, and QUIT commands.
-     * The class maintains the current directory for each client.
-     * The class uses a static ROOT_DIR for the server root directory.
-     */
+    * Each client connection is handled by a separate instance of this class.
+    * The class implements the Runnable interface to run in a separate thread.
+    * The class handles the LS, CD, GET, PUT, and QUIT commands.
+    * The class maintains the current directory for each client.
+    * The class uses a static ROOT_DIR for the server root directory.
+    */
     private static class ClientHandler implements Runnable {
         private final Socket clientSocket;
         private final String clientAddress; // Store client address for logging
@@ -195,8 +209,8 @@ public class FTPServer {
     
         /**
          * Handles the LS command to list files in the current directory in the desired format.
-         * @param out The output writer to communicate with the client.
-         */
+        * @param out The output writer to communicate with the client.
+        */
         /**
          * Handles the LS command to list files in the current directory in the desired format.
         * @param out The output writer to communicate with the client.
@@ -233,9 +247,9 @@ public class FTPServer {
     
         /**
          * Handles the CD command to change the current directory.
-         * @param command The command array containing the directory to change to.
-         * @param out The output writer to communicate with the client.
-         */
+        * @param command The command array containing the directory to change to.
+        * @param out The output writer to communicate with the client.
+        */
         private void handleCD(String[] command, PrintWriter out) {
             if (command.length > 1) {
                 File newDir = new File(currentDir + File.separator + command[1]);
@@ -258,10 +272,10 @@ public class FTPServer {
     
         /**
          * Handles the GET command for file download.
-         * @param command The command array containing the file to download.
-         * @param out The output writer to communicate with the client.
-         * @throws IOException If an I/O error occurs while sending the file.
-         */
+        * @param command The command array containing the file to download.
+        * @param out The output writer to communicate with the client.
+        * @throws IOException If an I/O error occurs while sending the file.
+        */
         private void handleGET(String[] command, PrintWriter out) throws IOException {
             if (command.length > 1) {
                 File file = new File(currentDir + File.separator + command[1]);
@@ -271,8 +285,8 @@ public class FTPServer {
                         try (ServerSocket transferSocket = new ServerSocket(0)) {
                             out.println("READY " + transferSocket.getLocalPort() + " " + fileSize);  // Send file size
                             try (Socket fileTransferSocket = transferSocket.accept();
-                                 FileInputStream fis = new FileInputStream(file);
-                                 BufferedOutputStream bos = new BufferedOutputStream(fileTransferSocket.getOutputStream())) {
+                                FileInputStream fis = new FileInputStream(file);
+                                BufferedOutputStream bos = new BufferedOutputStream(fileTransferSocket.getOutputStream())) {
                                 byte[] buffer = new byte[TCP_BUFFER_SIZE];
                                 int bytesRead;
                                 while ((bytesRead = fis.read(buffer)) != -1) {
@@ -380,11 +394,11 @@ public class FTPServer {
     
         /**
  * Handles the PUT command for file upload.
- * @param command The command array containing the file to upload.
- * @param out The output writer to communicate with the client.
- * @param in The existing BufferedReader to read client messages.
- * @throws IOException If an I/O error occurs while receiving the file.
- */
+* @param command The command array containing the file to upload.
+* @param out The output writer to communicate with the client.
+* @param in The existing BufferedReader to read client messages.
+* @throws IOException If an I/O error occurs while receiving the file.
+*/
 private void handlePUT(String[] command, PrintWriter out, BufferedReader in) throws IOException {
     if (command.length > 2) {
         long fileSize;
@@ -412,12 +426,12 @@ private void handlePUT(String[] command, PrintWriter out, BufferedReader in) thr
             if (!udpMode) {
                 // TCP mode
                 try (ServerSocket transferSocket = new ServerSocket(0);
-                     FileOutputStream fos = new FileOutputStream(raf.getFD())) {
+                    FileOutputStream fos = new FileOutputStream(raf.getFD())) {
                     out.println("READY " + transferSocket.getLocalPort() + " " + fileSize);  // Send file size
                     out.flush();
 
                     try (Socket fileTransferSocket = transferSocket.accept();
-                         BufferedInputStream bis = new BufferedInputStream(fileTransferSocket.getInputStream())) {
+                        BufferedInputStream bis = new BufferedInputStream(fileTransferSocket.getInputStream())) {
                         byte[] buffer = new byte[TCP_BUFFER_SIZE];
                         int bytesRead;
                         long currentBytes = 0;
@@ -556,12 +570,12 @@ private void handlePUT(String[] command, PrintWriter out, BufferedReader in) thr
 
         /**
          * Sends an ACK for the specified sequence number to the client.
-         * @param socket The DatagramSocket used for communication.
-         * @param clientAddress The InetAddress of the client.
-         * @param clientPort The port number of the client.
-         * @param sequenceNumber The sequence number to acknowledge.
-         * @throws IOException If an I/O error occurs while sending the ACK.
-         */
+        * @param socket The DatagramSocket used for communication.
+        * @param clientAddress The InetAddress of the client.
+        * @param clientPort The port number of the client.
+        * @param sequenceNumber The sequence number to acknowledge.
+        * @throws IOException If an I/O error occurs while sending the ACK.
+        */
         private void sendACK(DatagramSocket socket, InetAddress clientAddress, int clientPort, long sequenceNumber) throws IOException {
             // ACK Packet
             // Format: [sequence number]
@@ -576,9 +590,9 @@ private void handlePUT(String[] command, PrintWriter out, BufferedReader in) thr
     
         /**
          * Handles the QUIT command, closing the client connection.
-         * @param out The output writer to communicate with the client.
-         * @throws IOException If an I/O error occurs.
-         */
+        * @param out The output writer to communicate with the client.
+        * @throws IOException If an I/O error occurs.
+        */
         private void handleQUIT(PrintWriter out) throws IOException {
             out.println("Goodbye!"); // Inform the client the server is closing the connection
             printAndLog("Client issued QUIT. Closing connection for: " + clientAddress);
@@ -645,4 +659,3 @@ class CustomLogFormatter extends Formatter {
         );
     }
 }
- 
