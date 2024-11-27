@@ -12,3 +12,6 @@ mkdir bin
 tar -zxf jdk-23_linux-x64_bin.tar.gz -C ~/bin/
 export JAVA_HOME=~/bin/jdk-23.0.1
 export PATH="$JAVA_HOME/bin:$PATH"
+
+sudo sysctl -w net.core.rmem_max=167772160  # 160MB
+sudo sysctl -w net.core.rmem_default=167772160
