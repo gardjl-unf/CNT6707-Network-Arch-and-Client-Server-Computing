@@ -69,8 +69,8 @@ public class FTPClient {
         private long totalBytesTransferred = 0; // For metrics
         private long duration = 0; // For metrics
         private volatile boolean transferActive = true;
-        long bytesPerFile = 0;
-        int runNumber = 0;
+        private long bytesPerFile = 0;
+        private int runNumber = 0;
     
         private PacketHandler(DatagramSocket socket, FileOutputStream fos, long expectedFileSize,
                              QuadConsumer<Long, Long, Integer, Long> transferDisplay, int timeout, int runNumber) {
@@ -145,7 +145,7 @@ public class FTPClient {
                         expectedSequence++;
 
                         // Update the transfer display with sequence and CRC
-                        transferDisplay.accept(totalBytesTransferred - runNumber * bytesPerFile, bytesPerFile, receivedChecksum, sequenceNumber);
+                        transferDisplay.accept(totalBytesTransferred, bytesPerFile, receivedChecksum, sequenceNumber);
                     }
                 }
     
@@ -520,11 +520,11 @@ public class FTPClient {
         if (numRuns > 1) {
             // Test mode: display average statistics
             long averageDuration = totalDuration / numRuns;
-            double averageThroughput = totalBytesTransferred / (averageDuration / 1000.0);  // Throughput in b/s
+            double averageThroughput = totalBytesTransferred / (averageDuration * numRuns/ 1000.0);  // Throughput in b/s
             System.out.println("");  // New line for clarity
             printAndLog("Average transfer time for " + numRuns + " runs: " + averageDuration + " ms", true);
             printAndLog("File size: " + filesize + " bytes", true);
-            printAndLog("Total bytes transferred: " + totalBytesTransferred + " bytes", true);
+            printAndLog("Total bytes transferred: " + totalBytesTransferred / numRuns + " bytes", true);
             printAndLog("Average throughput: " + (long) averageThroughput + " b/s", true);
         } else {
             // Single run: display detailed stats
