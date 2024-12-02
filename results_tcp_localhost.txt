@@ -1,0 +1,483 @@
+GET
+Logging to FTPClient.log
+Starting FTP Client...
+Java version: 23.0.1
+Attempting to connect to localhost on default port (21)
+Connection successful to localhost:21
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 6
+Testing mode enabled
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 1
+Enter file name to download: file1MB.dat
+Starting run 1 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 2 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 3 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 4 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 5 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 6 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 7 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 8 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 9 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 10 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+GET transfer of file1MB.dat complete.
+
+Average transfer time for 10 runs: 37 ms
+File size: 1048576 bytes
+Total bytes transferred: 1077336 bytes
+Average throughput: 29117189 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 1
+Enter file name to download: file25MB.dat
+Starting run 1 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 2 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 3 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 4 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 5 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 6 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 7 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 8 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 9 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 10 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+GET transfer of file25MB.dat complete.
+
+Average transfer time for 10 runs: 687 ms
+File size: 26214400 bytes
+Total bytes transferred: 26932640 bytes
+Average throughput: 39203260 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 1
+Enter file name to download: file50MB.dat
+Starting run 1 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 2 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 3 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 4 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 5 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 6 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 7 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 8 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 9 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 10 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+GET transfer of file50MB.dat complete.
+
+Average transfer time for 10 runs: 1219 ms
+File size: 52428800 bytes
+Total bytes transferred: 53865240 bytes
+Average throughput: 44188055 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 1
+Enter file name to download: file100MB.dat
+Starting run 1 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 2 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 3 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 4 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 5 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 6 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 7 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 8 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 9 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 10 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+GET transfer of file100MB.dat complete.
+
+Average transfer time for 10 runs: 3486 ms
+File size: 104857600 bytes
+Total bytes transferred: 107730440 bytes
+Average throughput: 30903740 b/s
+
+PUT
+Logging to FTPClient.log
+Starting FTP Client...
+Java version: 23.0.1
+Attempting to connect to localhost on default port (21)
+Connection successful to localhost:21
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 6
+Testing mode enabled
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file1MB.dat
+Starting run 1 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 2 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 3 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 4 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 5 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 6 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 7 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 8 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 9 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+--------------------------------------------------
+Starting run 10 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes)
+PUT transfer of file1MB.dat complete.
+
+Average transfer time for 10 runs: 38 ms
+File size: 1048576 bytes
+Total bytes transferred: 1077336 bytes
+Average throughput: 28350947 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file25MB.dat
+Starting run 1 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 2 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 3 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 4 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 5 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 6 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 7 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 8 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 9 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+--------------------------------------------------
+Starting run 10 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes)
+PUT transfer of file25MB.dat complete.
+
+Average transfer time for 10 runs: 638 ms
+File size: 26214400 bytes
+Total bytes transferred: 26932640 bytes
+Average throughput: 42214169 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file50MB.dat
+Starting run 1 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 2 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 3 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 4 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 5 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 6 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 7 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 8 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 9 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+--------------------------------------------------
+Starting run 10 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes)
+PUT transfer of file50MB.dat complete.
+
+Average transfer time for 10 runs: 1192 ms
+File size: 52428800 bytes
+Total bytes transferred: 53865240 bytes
+Average throughput: 45188959 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file100MB.dat
+Starting run 1 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 2 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 3 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 4 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 5 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 6 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 7 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 8 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 9 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+--------------------------------------------------
+Starting run 10 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes)
+PUT transfer of file100MB.dat complete.
+
+Average transfer time for 10 runs: 2476 ms
+File size: 104857600 bytes
+Total bytes transferred: 107730440 bytes
+Average throughput: 43509870 b/s

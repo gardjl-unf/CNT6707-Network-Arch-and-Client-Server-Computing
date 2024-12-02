@@ -1,0 +1,187 @@
+GET
+Logging to FTPClient.log
+Starting FTP Client...
+Java version: 23.0.1
+Attempting to connect to 10.11.12.56 on default port (21)
+Connection successful to 10.11.12.56:21
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 5
+Transfer mode switched to UDP
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 1
+Enter file name to download: file1MB.dat
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 718
+GET transfer of file1MB.dat complete.
+
+GET of file1MB.dat completed in 227 ms
+File size: 1048576 bytes
+Total bytes transferred: 1077336 bytes
+Throughput: 4745973 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 1
+Enter file name to download: file25MB.dat
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17955      
+GET transfer of file25MB.dat complete.
+
+GET of file25MB.dat completed in 5455 ms
+File size: 26214400 bytes
+Total bytes transferred: 26932640 bytes
+Throughput: 4937239 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 1
+Enter file name to download: file50MB.dat
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35910      
+GET transfer of file50MB.dat complete.
+
+GET of file50MB.dat completed in 11253 ms
+File size: 52428800 bytes
+Total bytes transferred: 53865240 bytes
+Throughput: 4786744 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 1
+Enter file name to download: file100MB.dat
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71820    
+GET transfer of file100MB.dat complete.
+
+GET of file100MB.dat completed in 24239 ms
+File size: 104857600 bytes
+Total bytes transferred: 107730440 bytes
+Throughput: 4444508 b/s
+
+PUT
+Logging to FTPClient.log
+Starting FTP Client...
+Java version: 23.0.1
+Attempting to connect to 10.11.12.56 on default port (21)
+Connection successful to 10.11.12.56:21
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 5
+Transfer mode switched to UDP
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file1MB.dat
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 719
+PUT transfer of file1MB.dat complete.
+
+PUT of file1MB.dat completed in 152 ms
+File size: 1048576 bytes
+Total bytes transferred: 1077336 bytes
+Throughput: 7087736 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file25MB.dat
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17956      
+PUT transfer of file25MB.dat complete.
+
+PUT of file25MB.dat completed in 1916 ms
+File size: 26214400 bytes
+Total bytes transferred: 26932640 bytes
+Throughput: 14056701 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file50MB.dat
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35911      
+PUT transfer of file50MB.dat complete.
+
+PUT of file50MB.dat completed in 3729 ms
+File size: 52428800 bytes
+Total bytes transferred: 53865240 bytes
+Throughput: 14444955 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file100MB.dat
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71821    
+PUT transfer of file100MB.dat complete.
+
+PUT of file100MB.dat completed in 7080 ms
+File size: 104857600 bytes
+Total bytes transferred: 107730440 bytes
+Throughput: 15216163 b/s

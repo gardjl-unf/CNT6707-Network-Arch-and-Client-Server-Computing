@@ -296,6 +296,7 @@ public class FTPClient {
         int numRuns = testingMode ? NUM_TESTS : 1;
         long fileSize = 0;
         long bytesPerFile = 0;
+        boolean transferSuccess = false;  // Flag to indicate if transfer was successful
     
         for (int i = 0; i < numRuns; i++) {
             if (i > 0) {
@@ -311,6 +312,7 @@ public class FTPClient {
             String serverResponse = in.readLine();
     
             if (serverResponse != null && serverResponse.startsWith("READY")) {
+                transferSuccess = true;  // Transfer is going to happen
                 String[] readyResponse = serverResponse.split(" ");
                 int port = Integer.parseInt(readyResponse[1]); // Server's transfer port
                 fileSize = Long.parseLong(readyResponse[2]);  // File size from server
@@ -377,11 +379,15 @@ public class FTPClient {
                 }
             } else {
                 printAndLog("Error: " + serverResponse, true);
+                transferSuccess = false;  // No transfer occurred
+                break;  // Exit the loop since there's an error
             }
         }
 
-        // Log transfer details
-        logTransferDetails(numRuns, fileSize, totalDuration, totalBytesTransferred, fileName, "GET");
+        if (transferSuccess) {
+            // Log transfer details
+            logTransferDetails(numRuns, fileSize, totalDuration, totalBytesTransferred, fileName, "GET");
+        }
     }    
 
     /**
@@ -397,6 +403,7 @@ public class FTPClient {
         int numRuns = testingMode ? NUM_TESTS : 1;
         long fileSize = 0;
         long bytesPerFile = 0;
+        boolean transferSuccess = false;  // Flag to indicate if transfer was successful
 
         for (int i = 0; i < numRuns; i++) {
             if (i > 0) {
@@ -417,6 +424,7 @@ public class FTPClient {
             if (serverResponse != null && serverResponse.startsWith("READY")) {
                 String[] readyResponse = serverResponse.split(" ");
                 int port = Integer.parseInt(readyResponse[1]); // Server's transfer port
+                transferSuccess = true;  // Transfer is going to happen
 
                 if (!udpMode) {
                     // TCP mode
@@ -496,15 +504,18 @@ public class FTPClient {
                 }
             } else {
                 printAndLog("Server error: " + serverResponse, true);
-                return;
+                transferSuccess = false;  // No transfer occurred
+                break;  // Exit the loop since there's an error
             }
 
             long endTime = System.currentTimeMillis();
             totalDuration += (endTime - startTime);
         }
 
-        // Log details
-        logTransferDetails(numRuns, fileSize, totalDuration, totalBytesTransferred, fileName, "PUT");
+        if (transferSuccess) {
+            // Log details
+            logTransferDetails(numRuns, fileSize, totalDuration, totalBytesTransferred, fileName, "PUT");
+        }
     }
 
     /**

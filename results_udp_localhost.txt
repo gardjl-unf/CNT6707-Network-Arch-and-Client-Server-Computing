@@ -1,0 +1,505 @@
+GET
+Logging to FTPClient.log
+Starting FTP Client...
+Java version: 23.0.1
+Attempting to connect to localhost on default port (21)
+Connection successful to localhost:21
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 5
+Transfer mode switched to UDP
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 6
+Testing mode enabled
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 1
+Enter file name to download: file1MB.dat
+Starting run 1 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 718
+--------------------------------------------------
+Starting run 2 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 718
+--------------------------------------------------
+Starting run 3 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 718
+--------------------------------------------------
+Starting run 4 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 718
+--------------------------------------------------
+Starting run 5 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 718
+--------------------------------------------------
+Starting run 6 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 718
+--------------------------------------------------
+Starting run 7 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 718
+--------------------------------------------------
+Starting run 8 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 718
+--------------------------------------------------
+Starting run 9 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 718
+--------------------------------------------------
+Starting run 10 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 718
+GET transfer of file1MB.dat complete.
+
+Average transfer time for 10 runs: 76 ms
+File size: 1048576 bytes
+Total bytes transferred: 1077336 bytes
+Average throughput: 14175473 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 1
+Enter file name to download: file25MB.dat
+Starting run 1 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17955      
+--------------------------------------------------
+Starting run 2 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17955      
+--------------------------------------------------
+Starting run 3 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17955      
+--------------------------------------------------
+Starting run 4 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17955      
+--------------------------------------------------
+Starting run 5 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17955      
+--------------------------------------------------
+Starting run 6 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17955      
+--------------------------------------------------
+Starting run 7 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17955      
+--------------------------------------------------
+Starting run 8 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17955      
+--------------------------------------------------
+Starting run 9 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17955      
+--------------------------------------------------
+Starting run 10 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17955      
+GET transfer of file25MB.dat complete.
+
+Average transfer time for 10 runs: 1428 ms
+File size: 26214400 bytes
+Total bytes transferred: 26932640 bytes
+Average throughput: 18860392 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 1
+Enter file name to download: file50MB.dat
+Starting run 1 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35910      
+--------------------------------------------------
+Starting run 2 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35910      
+--------------------------------------------------
+Starting run 3 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35910      
+--------------------------------------------------
+Starting run 4 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35910      
+--------------------------------------------------
+Starting run 5 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35910      
+--------------------------------------------------
+Starting run 6 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35910      
+--------------------------------------------------
+Starting run 7 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35910      
+--------------------------------------------------
+Starting run 8 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35910      
+--------------------------------------------------
+Starting run 9 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35910      
+--------------------------------------------------
+Starting run 10 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35910      
+GET transfer of file50MB.dat complete.
+
+Average transfer time for 10 runs: 2994 ms
+File size: 52428800 bytes
+Total bytes transferred: 53865240 bytes
+Average throughput: 17991062 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 1
+Enter file name to download: file100MB.dat
+Starting run 1 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71820    
+--------------------------------------------------
+Starting run 2 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71820    
+--------------------------------------------------
+Starting run 3 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71820    
+--------------------------------------------------
+Starting run 4 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71820    
+--------------------------------------------------
+Starting run 5 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71820    
+--------------------------------------------------
+Starting run 6 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71820    
+--------------------------------------------------
+Starting run 7 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71820    
+--------------------------------------------------
+Starting run 8 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71820    
+--------------------------------------------------
+Starting run 9 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71820    
+--------------------------------------------------
+Starting run 10 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71820    
+GET transfer of file100MB.dat complete.
+
+Average transfer time for 10 runs: 5493 ms
+File size: 104857600 bytes
+Total bytes transferred: 107730440 bytes
+Average throughput: 19612313 b/s
+
+PUT
+Logging to FTPClient.log
+Starting FTP Client...
+Java version: 23.0.1
+Attempting to connect to localhost on default port (21)
+Connection successful to localhost:21
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode ([TCP]/UDP)
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 5
+Transfer mode switched to UDP
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode (ON/[OFF])
+7) QUIT
+Enter choice: 6
+Testing mode enabled
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file1MB.dat
+Starting run 1 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 719
+--------------------------------------------------
+Starting run 2 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 719
+--------------------------------------------------
+Starting run 3 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 719
+--------------------------------------------------
+Starting run 4 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 719
+--------------------------------------------------
+Starting run 5 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 719
+--------------------------------------------------
+Starting run 6 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 719
+--------------------------------------------------
+Starting run 7 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 719
+--------------------------------------------------
+Starting run 8 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 719
+--------------------------------------------------
+Starting run 9 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 719
+--------------------------------------------------
+Starting run 10 of 10 for file1MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (1077336/1077336 bytes) CRC32: 0xf4f0ee61 Segment: 719
+PUT transfer of file1MB.dat complete.
+
+Average transfer time for 10 runs: 82 ms
+File size: 1048576 bytes
+Total bytes transferred: 1077336 bytes
+Average throughput: 13138243 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file25MB.dat
+Starting run 1 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17956      
+--------------------------------------------------
+Starting run 2 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17956      
+--------------------------------------------------
+Starting run 3 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17956      
+--------------------------------------------------
+Starting run 4 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17956      
+--------------------------------------------------
+Starting run 5 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17956      
+--------------------------------------------------
+Starting run 6 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17956      
+--------------------------------------------------
+Starting run 7 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17956      
+--------------------------------------------------
+Starting run 8 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17956      
+--------------------------------------------------
+Starting run 9 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17956      
+--------------------------------------------------
+Starting run 10 of 10 for file25MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (26932640/26932640 bytes) CRC32: 0x3f89f747 Segment: 17956      
+PUT transfer of file25MB.dat complete.
+
+Average transfer time for 10 runs: 1586 ms
+File size: 26214400 bytes
+Total bytes transferred: 26932640 bytes
+Average throughput: 16981488 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file50MB.dat
+Starting run 1 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35911      
+--------------------------------------------------
+Starting run 2 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35911      
+--------------------------------------------------
+Starting run 3 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35911      
+--------------------------------------------------
+Starting run 4 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35911      
+--------------------------------------------------
+Starting run 5 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35911      
+--------------------------------------------------
+Starting run 6 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35911      
+--------------------------------------------------
+Starting run 7 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35911      
+--------------------------------------------------
+Starting run 8 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35911      
+--------------------------------------------------
+Starting run 9 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35911      
+--------------------------------------------------
+Starting run 10 of 10 for file50MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (53865240/53865240 bytes) CRC32: 0x695218af Segment: 35911      
+PUT transfer of file50MB.dat complete.
+
+Average transfer time for 10 runs: 3110 ms
+File size: 52428800 bytes
+Total bytes transferred: 53865240 bytes
+Average throughput: 17320012 b/s
+
+FTP Client Menu:
+1) GET
+2) PUT
+3) CD
+4) LS
+5) Toggle Transfer Mode (TCP/[UDP])
+6) Toggle Testing Mode ([ON]/OFF)
+7) QUIT
+Enter choice: 2
+Enter file name to upload: file100MB.dat
+Starting run 1 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71821    
+--------------------------------------------------
+Starting run 2 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71821
+--------------------------------------------------
+Starting run 3 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71821    
+--------------------------------------------------
+Starting run 4 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71821    
+--------------------------------------------------
+Starting run 5 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71821    
+--------------------------------------------------
+Starting run 6 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71821    
+--------------------------------------------------
+Starting run 7 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71821    
+--------------------------------------------------
+Starting run 8 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71821    
+--------------------------------------------------
+Starting run 9 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71821    
+--------------------------------------------------
+Starting run 10 of 10 for file100MB.dat transfer.
+                                                                                                                          
+|==================================================| 100% (107730440/107730440 bytes) CRC32: 0xe815cf78 Segment: 71821    
+PUT transfer of file100MB.dat complete.
+
+Average transfer time for 10 runs: 6232 ms
+File size: 104857600 bytes
+Total bytes transferred: 107730440 bytes
+Average throughput: 17286655 b/s

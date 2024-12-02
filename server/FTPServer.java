@@ -39,7 +39,7 @@ public class FTPServer {
     private static int listenPort = 21;
     private static boolean running = true; // Server running flag
     private static ServerSocket serverSocket; // Class-level ServerSocket for handling shutdown
-    static final Logger LOGGER = Logger.getLogger("FTPServer");
+    private static final Logger LOGGER = Logger.getLogger("FTPServer");
     private static final int MTU = 1500;  // Maximum Transmission Unit (MTU) for Ethernet
     private static final int IP_OVERHEAD = 20; // 20 bytes for IP header
     private static final int TCP_OVERHEAD = 20; // 20 bytes for TCP header
@@ -57,18 +57,18 @@ public class FTPServer {
     private static class PacketHandler extends Thread {
         private final DatagramSocket socket;
         private final FileOutputStream fos;
-        private final long expectedFileSize;
-        private final int timeout;
+        //private final long expectedFileSize;
+        //private final int timeout;
         private final long startTime;
         private long totalBytesTransferred = 0;
         private volatile boolean transferActive = true;
-        long bytesPerFile = 0;
+        private long bytesPerFile = 0;
 
         private PacketHandler(DatagramSocket socket, FileOutputStream fos, long expectedFileSize, int timeout) {
             this.socket = socket;
             this.fos = fos;
-            this.expectedFileSize = expectedFileSize;
-            this.timeout = timeout;
+            //this.expectedFileSize = expectedFileSize;
+            //this.timeout = timeout;
             this.startTime = System.currentTimeMillis();
             this.bytesPerFile = expectedFileSize + UDP_IP_APPLICATION_OVERHEAD * (int)Math.ceil((double) expectedFileSize/UDP_BUFFER_SIZE);
         }
@@ -147,22 +147,29 @@ public class FTPServer {
             }
         }
 
-        public long getTotalBytesTransferred() {
-            return totalBytesTransferred;
-        }
+        //public long getTotalBytesTransferred() {
+        //    return totalBytesTransferred;
+        //}
     }
 
     public static void main(String[] args) throws IOException {
         LogToFile.logToFile(LOGGER, "FTPServer.log"); // Log to file
         printAndLog("Logging to FTPServer.log");
         printAndLog("Starting FTP server...");
-        String javaVersion = System.getProperty("java.version");
-        printAndLog("Java version: " + javaVersion);
-        Runtime runtime = Runtime.getRuntime();
-        long totalMemory = runtime.totalMemory();
-        long freeMemory = runtime.freeMemory();
-        long usedMemory = totalMemory - freeMemory;
-        printAndLog("System Memory: " + freeMemory / 1000.0 + "Mb/" + totalMemory / 1000.0 + "Mb (" + (usedMemory / 1000.0) + " used)");
+        final String javaVersion = System.getProperty("java.version");
+        final String javaVendor = System.getProperty("java.vendor");
+        final String osVersion = System.getProperty("os.version");
+        final String osName = System.getProperty("os.name");
+        final String osArch = System.getProperty("os.arch");
+        final Runtime runtime = Runtime.getRuntime();
+        final long totalMemory = runtime.totalMemory();
+        final long maxMemory = runtime.maxMemory();
+        final long freeMemory = runtime.freeMemory();
+        final long usedMemory = totalMemory - freeMemory;
+        final String MEMORY_FORMAT = "Java Memory: %.2fMb/%.2fMb (%.2fMb used) [%.2f%%]";
+        printAndLog("OS: " + osName + " " + osVersion + " (" + osArch + ")");
+        printAndLog("Java version: " + javaVersion + " (" + javaVendor + ")");
+        printAndLog(String.format(MEMORY_FORMAT, totalMemory / 1048576.0, maxMemory / 1048576.0, usedMemory / 1048576.0, (usedMemory * 100.0) / totalMemory));
 
         if (args.length > 0) {
             listenPort = Integer.parseInt(args[0]);
@@ -178,9 +185,9 @@ public class FTPServer {
             printAndLog("Server listening on " + serverSocket.getInetAddress() + ":" + serverSocket.getLocalPort());
             try (final DatagramSocket datagramSocket = new DatagramSocket()) {
                 datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
-                printAndLog("Server WAN IP: " + datagramSocket.getLocalAddress().getHostAddress());
+                printAndLog("WAN Address: " + datagramSocket.getLocalAddress().getHostAddress());
                 // Display server interface IP address
-                printAndLog("Server LAN IP: " + InetAddress.getLocalHost());
+                printAndLog("LAN Address: " + InetAddress.getLocalHost());
             } catch (Exception e) {
                 printAndLog("Server WAN IP: Unable to Reach Google DNS: " + e.getMessage());
             }
@@ -191,7 +198,6 @@ public class FTPServer {
             printAndLog("UDP buffer size: " + UDP_BUFFER_SIZE + " bytes");
             printAndLog("Server ready to accept client connections.");
             printAndLog("Waiting for client connections...");
-
 
             // Main loop to accept client connections
             while (running) {
@@ -495,7 +501,7 @@ public class FTPServer {
     */
     private void handlePUT(String[] command, PrintWriter out, BufferedReader in) throws IOException {
         if (command.length > 2) {
-            long fileSize;
+            final long fileSize;
             try {
                 fileSize = Long.parseLong(command[2]);  // Get file size from the client
             } catch (NumberFormatException e) {
